@@ -1,8 +1,10 @@
 # Course Browser Scraper
+# Samantha Voigt
 
 from bs4 import BeautifulSoup as bs
 import urllib2
 import ast
+import os
 
 def getAllCourses(): 
     '''Scrapes all course information from the Wellesley College Course Browser and 
@@ -37,20 +39,32 @@ def getAllCourses():
     
         listOfCourses.append(indivClassDict) #should go inside the first loop, but outside the second
     return listOfCourses
+    
+# semester should be in the format of 'FA14', 'SP15', etc...
         
-def writeListOfCoursesFile(L):
-    '''Writes a file with '''
-    courseFile = open('coursesFile.txt','w')
+def writeListFile(L, semester):
+    '''Given a list of courses and the semester, writes a file with the list as 
+    a string named according to the semester name given'''
+    filename = semester + 'CoursesFile.txt'
+    courseFile = open(filename,'w')
     courseFile.write(str(L))
     courseFile.close()
     
-def readListDictFile(filename): 
+def readCourseFile(filename): 
+    '''Takes in a local filename and reads the string inside of the file into a basic 
+    Python type (in this case, a list of dictionaries), and returns it.'''
     s = open(filename, 'r').read()
     return ast.literal_eval(s)
     
-   
-
-writeListOfCoursesFile(getAllCourses())
-
-#listOfCourses = readListDictFile('coursesFile.txt')
-#print listOfCourses[0]
+def updateCourseInfo(semester): 
+    '''When a new file of course info needs to get written (or re-written), this 
+    funtion will either update the file or write a new one. Will also return the list 
+    of courses for immediate use.'''
+    listOfCourses = getAllCourses()
+    writeListFile(listOfCourses, semester)
+    return listOfCourses
+    
+# Should only ever need to call 2 functions (readCourseFile and updateCourseInfo) when using this program
+#   use readCourseFile when the course info doesn't need to be updated
+#   use updateCourseInfo when the course info does need to be updated
+#       both will return a usable list of courses
