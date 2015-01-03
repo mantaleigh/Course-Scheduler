@@ -4,7 +4,6 @@
 from bs4 import BeautifulSoup as bs
 import urllib2
 import ast
-import os
 
 def getAllCourses(): 
     '''Scrapes all course information from the Wellesley College Course Browser and 
@@ -16,12 +15,13 @@ def getAllCourses():
     cellNames = ['CRN', 'Course', 'Title', 'Current Enrollment', 'Seats Available', \
     'Location(s)', 'Meeting Time(s)', 'Days(s)', 'Instructor', 'Additional Instructor(s)', \
     'Distribution(s)', 'Description', 'Prerequisites']
+    
     for row in tableContent.find_all('tr'):
         indivClassDict = {}
         cellNum = 0
         for cell in row.find_all('th'): #every loop is a new if statement that corresponds to cellNum
-            moreLink = ''
             if cell.contents != []:
+                
                 if cellNum == 0 or cellNum == 2 or cellNum == 3 or cellNum == 6 or cellNum == 10: 
                     #strip for CRN, Title, Current Enrollment, meeting times, and distribution
                     indivClassDict[cellNames[cellNum]] = str(cell.contents[0].encode("utf-8"))
@@ -45,8 +45,29 @@ def getAllCourses():
                     stripIndex1 = cellStr.find('">')
                     stripIndex2 = cellStr.find('</')
                     indivClassDict[cellNames[cellNum]] = cellStr[(stripIndex1+2):stripIndex2]
-                elif cellNum == 4 or cellNum == 7: #strip for Seats Available and Day(s)
+                
+                elif cellNum == 4 or cellNum == 7: 
+                    #strip for Seats Available and Day(s)
                     indivClassDict[cellNames[cellNum]] = str(cell.contents[1].encode("utf-8")).strip()
+                
+                #need to get the description and the prereqs from the second link
+                elif cellNum == 11: 
+                    linkTag = str(cell.find('a'))
+                    linkPt2 = linkTag[linkTag.find('=')+2:linkTag.find(' onclick')-1]
+                    moreLink = ('http://courses.wellesley.edu/' + linkPt2).replace('&amp;','&')
+                    page2 = urllib2.urlopen(moreLink)
+                    soup2 = bs(page2)     
+                    
+                    #get description:
+                    descStr = ''
+                    for string in soup2.find(text="Description").next.next.stripped_strings:
+                        descStr += string
+                    indivClassDict[cellNames[cellNum]] = descStr
+                    
+                    #get prereqs:
+                    prereqStr = soup2.find(text="Prerequisite(s)").next.next.string
+                    indivClassDict['Prerequisite(s)'] = prereqStr
+            
             #needs to be a separate if statement, not an elif 
             if cellNum <= len(cellNames):
                 cellNum += 1
@@ -73,7 +94,7 @@ def readCourseFile(filename):
 def updateCourseInfo(semester): 
     '''When a new file of course info needs to get written (or re-written), this 
     funtion will either update the file or write a new one. Will also return the list 
-    of courses for immediate use.'''
+    of courses for immediate use. Semester should be formatted like 'FA14' or 'SP15' '''
     listOfCourses = getAllCourses()
     writeListFile(listOfCourses, semester)
     return listOfCourses
