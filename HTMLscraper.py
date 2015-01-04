@@ -20,35 +20,25 @@ def getAllCourses():
         indivClassDict = {}
         cellNum = 0
         for cell in row.find_all('th'): #every loop is a new if statement that corresponds to cellNum
-            if cell.contents != []:
-                
+           
+            if cell.contents != []:     
                 if cellNum == 0 or cellNum == 2 or cellNum == 3 or cellNum == 6 or cellNum == 10: 
                     #strip for CRN, Title, Current Enrollment, meeting times, and distribution
-                    indivClassDict[cellNames[cellNum]] = str(cell.contents[0].encode("utf-8"))
+                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.string))
                     
-                    if cellNum == 10 and len(cell.contents) > 1: #when there are more than 1 distribution
+                    if cellNum == 10 and len(cell.contents) > 1: #when there are more than 1 distribution 
                         distList = []
-                        distList.append(str(cell.contents[0]).encode("utf-8"))
-                        otherDist = str(cell.contents[1].encode("utf-8"))
-                        #This is ugly -- fix 
-                        for i in range(1,len(cell.find_all('hr'))+1): #Need to update w/more modular ways
-                            if i == 1: 
-                                distList.append(otherDist[otherDist.find('>')+1:otherDist.find('<',1)].strip('\n').strip())
-                            if i == 2: 
-                                otherDist = otherDist[otherDist.find('<',1):]
-                                distList.append(otherDist[otherDist.find('>')+1:otherDist.find('<',1)].strip('\n').strip())
-                        indivClassDict[cellNames[cellNum]] = distList                        
+                        for dist in cell.text.split('\n'):
+                            distList.append(str(unicode(dist)))
+                        indivClassDict[cellNames[cellNum]] = distList                     
                         
                 elif cellNum == 1 or cellNum == 5 or cellNum == 8 or cellNum == 9: 
                     #strip for Course, Location(s), and Instructor and Additional Instructor
-                    cellStr = str(cell.contents[0].encode("utf-8"))
-                    stripIndex1 = cellStr.find('">')
-                    stripIndex2 = cellStr.find('</')
-                    indivClassDict[cellNames[cellNum]] = cellStr[(stripIndex1+2):stripIndex2]
+                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.find('a').string))
                 
                 elif cellNum == 4 or cellNum == 7: 
                     #strip for Seats Available and Day(s)
-                    indivClassDict[cellNames[cellNum]] = str(cell.contents[1].encode("utf-8")).strip()
+                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.next.next.next.string.strip('\n')))
                 
                 #need to get the description and the prereqs from the second link
                 elif cellNum == 11: 
@@ -61,11 +51,15 @@ def getAllCourses():
                     #get description:
                     descStr = ''
                     for string in soup2.find(text="Description").next.next.stripped_strings:
-                        descStr += string
+                        descStr = descStr + ' ' + str(unicode(string))
                     indivClassDict[cellNames[cellNum]] = descStr
                     
                     #get prereqs:
-                    prereqStr = soup2.find(text="Prerequisite(s)").next.next.string
+                    print indivClassDict["CRN"]
+                    try:
+                        prereqStr = str(unicode(soup2.find(text="Prerequisite(s)").next.next.string))
+                    except AttributeError: 
+                        prereqStr = 'Not provided'
                     indivClassDict['Prerequisite(s)'] = prereqStr
             
             #needs to be a separate if statement, not an elif 
@@ -73,6 +67,7 @@ def getAllCourses():
                 cellNum += 1
     
         listOfCourses.append(indivClassDict) #should go inside the first loop, but outside the second
+        print indivClassDict
     return listOfCourses
     
 # semester should be in the format of 'FA14', 'SP15', etc...
