@@ -18,29 +18,48 @@ def getAllCourses():
     
     for row in tableContent.find_all('tr'):
         indivClassDict = {}
+        timeList = []
         cellNum = 0
         for cell in row.find_all('th'): #every loop is a new if statement that corresponds to cellNum
            
             if cell.contents != []:     
-                if cellNum == 0 or cellNum == 2 or cellNum == 3 or cellNum == 6 or cellNum == 10: 
-                    #strip for CRN, Title, Current Enrollment, meeting times, and distribution
-                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.string))
+                if cellNum == 0 or cellNum == 2 or cellNum == 3 or (cellNum == 10 and len(cell.contents) == 1): 
+                    # save CRN, Title, Current Enrollment, and distribution (if there is only one)
+                    indivClassDict[cellNames[cellNum]] = cell.string.encode('utf-8')
                     
-                    if cellNum == 10 and len(cell.contents) > 1: #when there are more than 1 distribution 
-                        distList = []
-                        for dist in cell.text.split('\n'):
-                            distList.append(str(unicode(dist)))
-                        indivClassDict[cellNames[cellNum]] = distList                     
+                elif (cellNum == 10 and len(cell.contents) > 1): #when there is more than 1 distribution
+                    distList = []
+                    for dist in cell.text.split('\n'):
+                        distList.append(dist.encode('utf-8'))
+                    indivClassDict[cellNames[cellNum]] = distList        
+                
+                elif cellNum == 6: # save times in a list
+                    if len(cell.contents) > 1: 
+                        for time in cell.text.split('\n'):
+                            timeList.append(time.encode('utf-8'))
+                    else: 
+                        timeList.append(cell.string.encode('utf-8'))
+                
+                # Handles making a day/time dict
+                elif cellNum == 7:
+                    dayTimeDict = {}
+                    for i in range(1, len(cell.text.split('\n'))):
+                        dayName = cell.text.split('\n')[i].encode('utf-8')
+                        dayTimeDict[dayName] = timeList[i-1]
+                    indivClassDict['Day/Time'] = dayTimeDict
+                        
+                           
                         
                 elif cellNum == 1 or cellNum == 5 or cellNum == 8 or cellNum == 9: 
-                    #strip for Course, Location(s), and Instructor and Additional Instructor
-                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.find('a').string))
+                    # save Course, Location(s), and Instructor and Additional Instructor
+                    if cell.find('a').contents != []:
+                        indivClassDict[cellNames[cellNum]] = cell.find('a').string.encode('utf-8')
                 
-                elif cellNum == 4 or cellNum == 7: 
-                    #strip for Seats Available and Day(s)
-                    indivClassDict[cellNames[cellNum]] = str(unicode(cell.next.next.next.string.strip('\n')))
+                elif cellNum == 4: 
+                    # save Seats Available
+                    indivClassDict[cellNames[cellNum]] = cell.next.next.next.string.strip('\n').encode('utf-8')
                 
-                #need to get the description and the prereqs from the second link
+                # save description and the prereqs from the 'more' link
                 elif cellNum == 11: 
                     linkTag = str(cell.find('a'))
                     linkPt2 = linkTag[linkTag.find('=')+2:linkTag.find(' onclick')-1]
@@ -48,16 +67,15 @@ def getAllCourses():
                     page2 = urllib2.urlopen(moreLink)
                     soup2 = bs(page2)     
                     
-                    #get description:
+                    # get description:
                     descStr = ''
                     for string in soup2.find(text="Description").next.next.stripped_strings:
-                        descStr = descStr + ' ' + str(unicode(string))
+                        descStr = descStr + ' ' + string.encode('utf-8')
                     indivClassDict[cellNames[cellNum]] = descStr
                     
-                    #get prereqs:
-                    print indivClassDict["CRN"]
+                    # get prereqs:
                     try:
-                        prereqStr = str(unicode(soup2.find(text="Prerequisite(s)").next.next.string))
+                        prereqStr = soup2.find(text="Prerequisite(s)").next.next.string.encode('utf-8')
                     except AttributeError: 
                         prereqStr = 'Not provided'
                     indivClassDict['Prerequisite(s)'] = prereqStr
@@ -67,6 +85,7 @@ def getAllCourses():
                 cellNum += 1
     
         listOfCourses.append(indivClassDict) #should go inside the first loop, but outside the second
+        print indivClassDict['CRN']
         print indivClassDict
     return listOfCourses
     
