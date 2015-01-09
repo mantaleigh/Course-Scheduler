@@ -48,8 +48,6 @@ def getAllCourses():
                         dayTimeDict[dayName] = timeList[i-1]
                     indivClassDict['Day/Time'] = dayTimeDict
                         
-                           
-                        
                 elif cellNum == 1 or cellNum == 5 or cellNum == 8 or cellNum == 9: 
                     # save Course, Location(s), and Instructor and Additional Instructor
                     if cell.find('a').contents != []:
