@@ -2,6 +2,7 @@
 
 from Tkinter import * 
 import HTMLscraper as scraper
+import multiListBox
 
 class CourseBrowserApp(Tk): 
     def __init__(self): 
@@ -31,7 +32,16 @@ class CourseBrowserApp(Tk):
         'Biological Sciences':'BISC', 'Cinema & Media Studies':'CAMS', 'Chemistry':'CHEM', \
         'Cognitive and Linguistic Sci':['CLSC','LING'], 'Classical Studies':['CLCV','LAT','GRK'], \
         'Comparative Literature':'CPLT', 'Computer Science':'CS', 'East Asian Languages and Culture':['CHIN', 'EALC', 'JPN', 'KOR'],\
-        '':''}
+        'Economics':'ECON', 'Education':'EDUC', 'English':'ENG', 'Environmental Studies':'ES', \
+        'Extradepartmental':['ENGR','EXTD'], 'French':'FREN', 'Geosciences':'GEOS', \
+        'German':'GER', 'History':'HIST', 'Italian Studies':'ITAS', 'Jewish Studies':'HEBR', \
+        'Mathematics':'MATH', 'Medieval Renaissance Studies':'ME/R', 'Middle Eastern Studies':['ARAB','MES'], \
+        'Music':'MUS', 'Neuroscience':'NEUR', 'Physical Education':'PE', 'Peace and Justice Studies':'PEAC', \
+        'Philosophy':'PHIL', 'Physics':'PHYS','Political Science':['POL', 'POL1', 'POL2', 'POL3', 'POL4'], \
+        'Psychology':'PSYC', 'Quantitative Reasoning':'QR', 'Russian Area Studies':'RAST', \
+        'Religion':'REL', 'Russian':'RUSS', 'South Asia Studies':['HNUR','SAS'], 'Sociology':'SOC', \
+        'Spanish':'SPAN', 'Sustainability':'SUST', 'Theatre Studies':'THST', 'Women\'s and Gender Studies':'WGST',\
+        'Writing':'WRIT'}
         self.createWidgets()
         
     def createWidgets(self): 
@@ -53,44 +63,45 @@ class CourseBrowserApp(Tk):
         
         # 'Search By' section ------->
         searchByLabel = Label(topFrameLeft, text='SEARCH BY:', fg='navy',font='Times 16 bold')
-        searchByLabel.grid(row=0, column=0, sticky=W+E, padx=30)
+        searchByLabel.grid(row=0, column=0, sticky=W+E, padx=20)
         searchByBoxes = ['Distribution', 'Subject', 'Department', 'Time/Days', 'Professor']
         searchByVars = []
-        rowAvail = 1
+        colAvail = 1
         for box in searchByBoxes: 
             var = IntVar()
             button = Checkbutton(topFrameLeft,text=box,variable=var)
-            button.grid(row=rowAvail, column=0, sticky=W+E, padx=30)
+            button.grid(row=0, column=colAvail, sticky=W+E)
             searchByVars.append(var)
-            rowAvail += 1
+            colAvail += 1
       
         # 'Show Only' section ------->
         showOnlyLabel = Label(topFrameRight, text='SHOW ONLY:', fg='navy', font='Times 16 bold')
-        showOnlyLabel.grid(row=0, column=1, sticky=W+E, padx=30)
-        rowAvail = 1
+        showOnlyLabel.grid(row=0, column=0, sticky=W+E, padx=20)
+        colAvail = 1
         showOnlyBoxes = ['If seats are available*','100 levels','200 levels','300 levels']
         showOnlyVars = []
         for box in showOnlyBoxes: 
             var = IntVar()
             button = Checkbutton(topFrameRight, text=box, variable=var)
-            button.grid(row=rowAvail, column=1, sticky=W+E, padx=30)
+            button.grid(row=0, column=colAvail, sticky=W+E)
             showOnlyVars.append(var)
-            rowAvail += 1
+            colAvail += 1
         
         # Results ("Courses That Fit") section -------->
+        lbTuples = [('CRN',60), ('Course',80), ('Title',100), ('Seats Avail.',80),\
+        ('Location(s)',100), ('Time(s)',80), ('Day(s)',60), ('Instructor',100), \
+        ('Adtl. Instructor(s)',100), ('Distribution(s)',100), ('Description',100), ('Prerequisites',100)]
         coursesThatFitLabel = Label(bottomFrame, text="COURSES THAT FIT YOUR CRITERIA:", \
         font='Times 18 bold', fg='navy')
         coursesThatFitLabel.grid(sticky=E+W, padx=2, row=0)
         
-        scrollbar = Scrollbar(bottomFrame, orient=VERTICAL)
-        scrollbar.grid(row=2, column=1, sticky=N+S)
-        listbox = Listbox(bottomFrame, yscrollcommand=scrollbar.set, width=52, selectmode=MULTIPLE)
-        listbox.grid(row=2, column=0, sticky=E+W)
-        scrollbar['command'] = listbox.yview
+        mlb = multiListBox.MultiListbox(bottomFrame, lbTuples)
+        mlb.grid(row=2, column=0, sticky=E+W)
         
-        for i in range(1000): 
-            listbox.insert(END, str(i))
-
+        for i in range (100):
+            mlb.insert (END, ('Important Message: %d' % i,
+                            'John Doe',
+                            '10/10/%04d' % (1900+i)))
         
         # Button section ---------->
         updateButton = Button(buttonFrame, text='Update Courses')
