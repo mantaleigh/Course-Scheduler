@@ -9,12 +9,12 @@ def getAllCourses():
     '''Scrapes all course information from the Wellesley College Course Browser and 
     returns a list of dictionaries corresponding to each course'''
     listOfCourses = []
-    page = urllib2.urlopen('http://courses.wellesley.edu/')
-    soup = bs(page)
-    tableContent = soup.find('tbody')
     cellNames = ['CRN', 'Course', 'Title', 'Current Enrollment', 'Seats Available', \
     'Location(s)', 'Meeting Time(s)', 'Days(s)', 'Instructor', 'Additional Instructor(s)', \
     'Distribution(s)', 'Description', 'Prerequisites']
+    page = urllib2.urlopen('http://courses.wellesley.edu/')
+    soup = bs(page)
+    tableContent = soup.find('tbody')
     
     for row in tableContent.find_all('tr'):
         indivClassDict = {}
@@ -86,29 +86,26 @@ def getAllCourses():
         print indivClassDict['CRN']
         print indivClassDict
     return listOfCourses
-    
-# semester should be in the format of 'FA14', 'SP15', etc...
-        
-def writeListFile(L, semester):
-    '''Given a list of courses and the semester, writes a file with the list as 
-    a string named according to the semester name given'''
-    filename = semester + 'coursesFile.txt'
+
+def writeListFile(L):
+    '''Given a list of courses, writes a file with the list'''
+    filename = 'coursesFile.txt'
     courseFile = open(filename,'w')
     courseFile.write(str(L))
     courseFile.close()
     
-def readCourseFile(filename): 
+def readCourseFile(): 
     '''Takes in a local filename and reads the string inside of the file into a basic 
     Python type (in this case, a list of dictionaries), and returns it.'''
-    s = open(filename, 'r').read()
+    s = open('coursesFile.txt', 'r').read()
     return ast.literal_eval(s)
     
-def updateCourseInfo(semester): 
+def updateCourseInfo(): 
     '''When a new file of course info needs to get written (or re-written), this 
     funtion will either update the file or write a new one. Will also return the list 
-    of courses for immediate use. Semester should be formatted like 'FA14' or 'SP15' '''
+    of courses for immediate use. '''
     listOfCourses = getAllCourses()
-    writeListFile(listOfCourses, semester)
+    writeListFile(listOfCourses)
     return listOfCourses
 
 # Should only ever need to call 2 functions (readCourseFile and updateCourseInfo) when using this program

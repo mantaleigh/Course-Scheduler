@@ -94,28 +94,32 @@ class CourseBrowserApp(Tk):
       
         
         # Results ("Courses That Fit") section -------->
-        columnTuples = [('CRN',60), ('Course',80), ('Title',100), ('Seats Avail.',80),\
-        ('Location(s)',100), ('Time(s)',80), ('Day(s)',60), ('Instructor',100), \
-        ('Adtl. Instructor(s)',100), ('Distribution(s)',100), ('Description',100), ('Prerequisites',100)]
         coursesThatFitLabel = Label(self.bottomFrame, text="COURSES THAT FIT YOUR CRITERIA:", \
         font='Times 18 bold', fg='navy')
         coursesThatFitLabel.grid(sticky=E+W, padx=2, row=0)
+        coursesHelpText = Label(self.bottomFrame, \
+            text="Double click or hit return on a course row to see the description and prerequisites for that course", \
+        font='Times 12 italic')
+        coursesHelpText.grid(sticky=E+W, row=1)
        
-        mlb = CourseResultsBox(self.bottomFrame, columnTuples)
+        mlb = CourseResultsBox(self.bottomFrame)
         mlb.grid_(row=2, column=0, sticky=E+W)
         
         # Button section ---------->
-        updateButton = Button(self.buttonFrame, text='Update Courses')
-        updateButton.grid(row=0, column=4)
-        makeScheduleButton = Button(self.buttonFrame, text="Add To Schedule")
+        updateButton = Button(self.buttonFrame, text='Update Courses', command=scraper.updateCourseInfo)
+        updateButton.grid(row=0, column=2)
+        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule")
         makeScheduleButton.grid(row=0, column=3)
-        #saveCRNs = Button(buttonFrame, text="Save CRN")
-        #saveCRNs.grid(row=0, column=2)
 
 class CourseResultsBox(Tk): 
-        def __init__(self, master, columnTuples, **kwargs): 
+        def __init__(self, master, **kwargs): 
+            columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available', 
+            'Location(s)', 'Day/Time', 'Instructor', 'Additional Instructor(s)', 'Distribution(s)']
+            columnTuples = [('CRN',60), ('Course',80), ('Title',150), ('Seats Available',80),\
+            ('Location(s)',100), ('Day/Time',100), ('Instructor',100), \
+            ('Additional Instructor(s)',100), ('Distribution(s)',200)]
             self.box = multiListBox.MultiListbox(master, columnTuples, command=self.onReturn)
-            self.createTableContent()
+            self.createStartingTableContent(columnHeaders)
      
         def grid_(self, **kwargs): 
             self.box.grid(**kwargs)
@@ -123,14 +127,16 @@ class CourseResultsBox(Tk):
         def onReturn(self): 
             print 'hit Return or double clicked' #placeholder...
         
-        def createTableContent(self): 
-            # Placeholder...
-            for i in range (100):
-                self.box.insert (END, ('Important Message: %d' % i,
-                                'John Doe',
-                                '10/10/%04d' % (1900+i), 
-                                i, i, i, i, i, i, i, i, i))
-                
+        def createStartingTableContent(self, columnHeaders):
+            for course in scraper.readCourseFile():
+                courseInfo = []
+                for header in columnHeaders: 
+                    try: 
+                        courseInfo.append(course[header])
+                    except KeyError: 
+                        courseInfo.append('')
+            
+                self.box.insert (END, courseInfo)  
 
 app = CourseBrowserApp()
 app.mainloop()
