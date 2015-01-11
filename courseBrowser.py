@@ -9,6 +9,8 @@ class CourseBrowserApp(Tk):
         Tk.__init__(self)
         self.title('Course Browser')
         self.grid()
+        
+        #this data needs to be stored somewhere else, and scraped w/ the other data
         self.distributions = ['Arts, Music, Theatre, Film, Video', 'Epistemology & Cognition', \
         'Historical Studies', 'Language & Literature', 'Mathematical Modeling', \
         'Natural & Physical Sciences', 'QRB', 'QRF', 'Religion, Ethics, & Moral Philosophy', \
@@ -42,74 +44,93 @@ class CourseBrowserApp(Tk):
         'Religion':'REL', 'Russian':'RUSS', 'South Asia Studies':['HNUR','SAS'], 'Sociology':'SOC', \
         'Spanish':'SPAN', 'Sustainability':'SUST', 'Theatre Studies':'THST', 'Women\'s and Gender Studies':'WGST',\
         'Writing':'WRIT'}
+        
+        self.createFrames()
         self.createWidgets()
         
-    def createWidgets(self): 
+    def createFrames(self): 
         
         # Frames
-        topFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        topFrame.pack()
-        topFrameLeft = Frame(topFrame, takefocus=True, bd=2, relief=GROOVE)
-        topFrameLeft.pack(side=LEFT)
-        topFrameRight = Frame(topFrame, takefocus=True, bd=2, relief=GROOVE)
-        topFrameRight.pack(side=RIGHT)
-        #middleFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        #middleFrame.pack()
-        bottomFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        bottomFrame.pack()
-        buttonFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        buttonFrame.pack()
-        
+        self.topFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        self.topFrame.pack()
+        self.topFrameLeft = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
+        self.topFrameLeft.pack(side=LEFT)
+        self.topFrameRight = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
+        self.topFrameRight.pack(side=RIGHT)
+        #self.middleFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        #self.middleFrame.pack()
+        self.bottomFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        self.bottomFrame.pack()
+        self.buttonFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        self.buttonFrame.pack()
+   
+    def createWidgets(self): 
         
         # 'Search By' section ------->
-        searchByLabel = Label(topFrameLeft, text='SEARCH BY:', fg='navy',font='Times 16 bold')
+        searchByLabel = Label(self.topFrameLeft, text='SEARCH BY:', fg='navy',font='Times 16 bold')
         searchByLabel.grid(row=0, column=0, sticky=W+E, padx=20)
         searchByBoxes = ['Distribution', 'Subject', 'Department', 'Time/Days', 'Professor']
         searchByVars = []
         colAvail = 1
         for box in searchByBoxes: 
             var = IntVar()
-            button = Checkbutton(topFrameLeft,text=box,variable=var)
+            button = Checkbutton(self.topFrameLeft,text=box,variable=var)
             button.grid(row=0, column=colAvail, sticky=W+E)
             searchByVars.append(var)
             colAvail += 1
       
         # 'Show Only' section ------->
-        showOnlyLabel = Label(topFrameRight, text='SHOW ONLY:', fg='navy', font='Times 16 bold')
+        showOnlyLabel = Label(self.topFrameRight, text='SHOW ONLY:', fg='navy', font='Times 16 bold')
         showOnlyLabel.grid(row=0, column=0, sticky=W+E, padx=20)
         colAvail = 1
         showOnlyBoxes = ['If seats are available*','100 levels','200 levels','300 levels']
         showOnlyVars = []
         for box in showOnlyBoxes: 
             var = IntVar()
-            button = Checkbutton(topFrameRight, text=box, variable=var)
+            button = Checkbutton(self.topFrameRight, text=box, variable=var)
             button.grid(row=0, column=colAvail, sticky=W+E)
             showOnlyVars.append(var)
             colAvail += 1
+      
         
         # Results ("Courses That Fit") section -------->
-        lbTuples = [('CRN',60), ('Course',80), ('Title',100), ('Seats Avail.',80),\
+        columnTuples = [('CRN',60), ('Course',80), ('Title',100), ('Seats Avail.',80),\
         ('Location(s)',100), ('Time(s)',80), ('Day(s)',60), ('Instructor',100), \
         ('Adtl. Instructor(s)',100), ('Distribution(s)',100), ('Description',100), ('Prerequisites',100)]
-        coursesThatFitLabel = Label(bottomFrame, text="COURSES THAT FIT YOUR CRITERIA:", \
+        coursesThatFitLabel = Label(self.bottomFrame, text="COURSES THAT FIT YOUR CRITERIA:", \
         font='Times 18 bold', fg='navy')
         coursesThatFitLabel.grid(sticky=E+W, padx=2, row=0)
-        
-        mlb = multiListBox.MultiListbox(bottomFrame, lbTuples)
-        mlb.grid(row=2, column=0, sticky=E+W)
-        
-        for i in range (100):
-            mlb.insert (END, ('Important Message: %d' % i,
-                            'John Doe',
-                            '10/10/%04d' % (1900+i)))
+       
+        mlb = CourseResultsBox(self.bottomFrame, columnTuples)
+        mlb.grid_(row=2, column=0, sticky=E+W)
         
         # Button section ---------->
-        updateButton = Button(buttonFrame, text='Update Courses')
+        updateButton = Button(self.buttonFrame, text='Update Courses')
         updateButton.grid(row=0, column=4)
-        makeScheduleButton = Button(buttonFrame, text="Make Schedule")
+        makeScheduleButton = Button(self.buttonFrame, text="Add To Schedule")
         makeScheduleButton.grid(row=0, column=3)
-        saveCRNs = Button(buttonFrame, text="Save CRN(s)")
-        saveCRNs.grid(row=0, column=2)
+        #saveCRNs = Button(buttonFrame, text="Save CRN")
+        #saveCRNs.grid(row=0, column=2)
+
+class CourseResultsBox(Tk): 
+        def __init__(self, master, columnTuples, **kwargs): 
+            self.box = multiListBox.MultiListbox(master, columnTuples, command=self.onReturn)
+            self.createTableContent()
+     
+        def grid_(self, **kwargs): 
+            self.box.grid(**kwargs)
+        
+        def onReturn(self): 
+            print 'hit Return or double clicked' #placeholder...
+        
+        def createTableContent(self): 
+            # Placeholder...
+            for i in range (100):
+                self.box.insert (END, ('Important Message: %d' % i,
+                                'John Doe',
+                                '10/10/%04d' % (1900+i), 
+                                i, i, i, i, i, i, i, i, i))
+                
 
 app = CourseBrowserApp()
 app.mainloop()

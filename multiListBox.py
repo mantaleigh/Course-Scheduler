@@ -19,7 +19,7 @@
 #                  o Grabs focus when clicked.
 #                  o Columns are resizable.
 #                  o Properly handles keyboard navigation.
-#                  o Sorts when solumn labels are clicked.
+#                  o Sorts when column labels are clicked.
 #                  o Includes a vertical scrollbar.
 #                  o No external libraries except tkinter.
 #                   
