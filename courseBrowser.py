@@ -2,7 +2,7 @@
 
 from Tkinter import * 
 import HTMLscraper as scraper
-import multiListBox
+import multiListBox as mlb
 
 class CourseBrowserApp(Tk): 
     def __init__(self): 
@@ -98,7 +98,7 @@ class CourseBrowserApp(Tk):
         font='Times 18 bold', fg='navy')
         coursesThatFitLabel.grid(sticky=E+W, padx=2, row=0)
         coursesHelpText = Label(self.bottomFrame, \
-            text="Double click or hit return on a course row to see the description and prerequisites for that course", \
+            text="Hit Return/Enter on a course row to see the description, prerequisites, & additional instructors for that course", \
         font='Times 12 italic')
         coursesHelpText.grid(sticky=E+W, row=1)
        
@@ -107,36 +107,103 @@ class CourseBrowserApp(Tk):
         
         # Button section ---------->
         updateButton = Button(self.buttonFrame, text='Update Courses', command=scraper.updateCourseInfo)
-        updateButton.grid(row=0, column=2)
+        updateButton.grid(row=0, column=0)
         makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule")
-        makeScheduleButton.grid(row=0, column=3)
+        makeScheduleButton.grid(row=0, column=1)
+        notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", 
+        font='Times 12 italic')
+        notes.grid(row=1, columnspan=2)
 
-class CourseResultsBox(Tk): 
+class CourseResultsBox(): 
         def __init__(self, master, **kwargs): 
             columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available', 
-            'Location(s)', 'Day/Time', 'Instructor', 'Additional Instructor(s)', 'Distribution(s)']
-            columnTuples = [('CRN',60), ('Course',80), ('Title',150), ('Seats Available',80),\
-            ('Location(s)',100), ('Day/Time',100), ('Instructor',100), \
-            ('Additional Instructor(s)',100), ('Distribution(s)',200)]
-            self.box = multiListBox.MultiListbox(master, columnTuples, command=self.onReturn)
+            'Location(s)', 'Day/Time', 'Instructor', 'Distribution(s)']
+            columnTuples = [('CRN',45), ('Course',90), ('Title',200), ('Seats Avail.',75),\
+            ('Location(s)',100), ('Day/Time',200), ('Instructor',125), ('Distribution(s)',250)]
+            self.box = mlb.MultiListbox(master, columnTuples)
             self.createStartingTableContent(columnHeaders)
+            self.box.bind("<Return>", self.onReturn)
+            self.extraInfoApp = None
      
         def grid_(self, **kwargs): 
             self.box.grid(**kwargs)
         
-        def onReturn(self): 
-            print 'hit Return or double clicked' #placeholder...
+        def onReturn(self, event): 
+            if self.extraInfoApp!=None: self.extraInfoApp.destroy()
+            CRN = self.box.get(self.box.curselection())[0]
+            allCourses = scraper.readCourseFile()
+            selectedCourseInfo = (item for item in allCourses if item['CRN'] == CRN).next()
+            description = selectedCourseInfo['Description']
+            prereqs = selectedCourseInfo['Prerequisite(s)']
+            if 'Additional Instructor(s)' in selectedCourseInfo:
+                self.extraInfoApp = ExtraInfoApp(description, prereqs, additionalInstructor=selectedCourseInfo['Additional Instructor(s)'])
+                self.extraInfoApp.mainloop()
+            else: 
+                self.extraInfoApp = ExtraInfoApp(description, prereqs)
+                self.extraInfoApp.mainloop()
         
         def createStartingTableContent(self, columnHeaders):
+            '''Adds all course data into the listbox'''
             for course in scraper.readCourseFile():
                 courseInfo = []
                 for header in columnHeaders: 
                     try: 
-                        courseInfo.append(course[header])
+                        if type(course[header]) is str:
+                            courseInfo.append(course[header])
+                        
+                        elif type(course[header]) is list: 
+                            combinedElt = ''
+                            for elt in course[header]: 
+                                combinedElt = combinedElt + elt + ' | '
+                            courseInfo.append(combinedElt)
+                                
+                        elif type(course[header]) is dict: 
+                            dictionary = course[header]
+                            keys = dictionary.keys()
+                            combinedVals = ''
+                            for key in keys: 
+                                combinedVals = combinedVals + ' | ' + key + ': ' + dictionary[key]
+                            courseInfo.append(combinedVals + ' |')
                     except KeyError: 
                         courseInfo.append('')
             
                 self.box.insert (END, courseInfo)  
+        
+        def updateCourseInfo(self, columnHeaders): 
+            pass
+            
+class ExtraInfoApp(Toplevel): 
+    def __init__(self, description, prereqs, additionalInstructor=None): 
+        Toplevel.__init__(self)
+        self.title('Extra Information')
+        #self.grid()
+        self.createFrames(additionalInstructor)
+        self.createWidgets(description, prereqs, additionalInstructor)
+    
+    def createFrames(self, additionalInstructor):
+        self.descFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        self.descFrame.pack()
+        self.prereqFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+        self.prereqFrame.pack()
+        if additionalInstructor != None: 
+            self.addtlInstFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+            self.addtlInstFrame.pack()
+    
+    #can probably pretty this up (less repetition) with a dictionary or list
+    def createWidgets(self, description, prereqs, additionalInstructor):
+        descriptionLabel = Label(self.descFrame,font='Times 18 bold', fg='navy', text="DESCRIPTION:")
+        descriptionLabel.pack()
+        descriptionText = Message(self.descFrame, text=description)
+        descriptionText.pack()
+        prereqLabel = Label(self.prereqFrame, font='Times 18 bold', fg='navy', text="PREREQUISITE(S):")
+        prereqLabel.pack()
+        prereqText = Message(self.prereqFrame, text=prereqs)
+        prereqText.pack()
+        if additionalInstructor != None: 
+            instructorLabel = Label(self.addtlInstFrame, font='Times 18 bold', fg='navy', text="ADDITIONAL INSTRUCTOR(S):")
+            instructorLabel.pack()
+            instructorText = Label(self.addtlInstFrame, text=additionalInstructor)
+            instructorText.pack()
 
 app = CourseBrowserApp()
 app.mainloop()
