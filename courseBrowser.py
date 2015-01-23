@@ -4,52 +4,6 @@ from Tkinter import *
 import HTMLscraper as scraper
 import multiListBox as mlb
 
-# http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
-class VerticalScrolledFrame(Frame):
-    """A pure Tkinter scrollable frame that actually works!
-    * Use the 'interior' attribute to place widgets inside the scrollable frame
-    * Construct and pack/place/grid normally
-    * This frame only allows vertical scrolling
-
-    """
-    def __init__(self, parent, *args, **kw):
-        Frame.__init__(self, parent, *args, **kw)            
-
-        # create a canvas object and a vertical scrollbar for scrolling it
-        vscrollbar = Scrollbar(self, orient=VERTICAL)
-        vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = Canvas(self, bd=0, highlightthickness=0,
-                        yscrollcommand=vscrollbar.set)
-        canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
-        vscrollbar.config(command=canvas.yview)
-
-        # reset the view
-        canvas.xview_moveto(0)
-        canvas.yview_moveto(0)
-
-        # create a frame inside the canvas which will be scrolled with it
-        self.interior = interior = Frame(canvas)
-        interior_id = canvas.create_window(0, 0, window=interior,
-                                           anchor=NW)
-
-        # track changes to the canvas and frame width and sync them,
-        # also updating the scrollbar
-        def _configure_interior(event):
-            # update the scrollbars to match the size of the inner frame
-            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # update the canvas's width to fit the inner frame
-                canvas.config(width=interior.winfo_reqwidth())
-        interior.bind('<Configure>', _configure_interior)
-
-        def _configure_canvas(event):
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # update the inner frame's width to fill the canvas
-                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
-        canvas.bind('<Configure>', _configure_canvas)
-
-
 class CourseBrowserApp(Tk): 
     def __init__(self): 
         Tk.__init__(self)
@@ -92,6 +46,7 @@ class CourseBrowserApp(Tk):
         'Writing':'WRIT'}
 
         self.createdOptions = []
+        self.toSearchVars = {}
         self.optionButtonClicked = False
         
         self.createFrames()
@@ -99,8 +54,8 @@ class CourseBrowserApp(Tk):
         
     def createFrames(self): 
         '''Creates the frames (and a canvas) to organize all the information in the main app and create scrollbars'''
-        self.mainFrame = VerticalScrolledFrame(self)
-        self.mainFrame.pack()
+        self.mainFrame = ScrolledFrame(self)
+        self.mainFrame.pack(fill=BOTH, expand=TRUE)
         
         self.topFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
         self.topFrame.pack()
@@ -120,13 +75,13 @@ class CourseBrowserApp(Tk):
         # 'Search By' section ------->
         searchByLabel = Label(self.topFrameLeft, text='SEARCH BY:', fg='navy',font='Times 16 bold')
         searchByLabel.grid(row=0, column=0, sticky=W+E, padx=20)
-        searchByBoxes = ['Distribution', 'Subject', 'Department', 'Time/Days', 'Professor']
+        searchByBoxes = ['Distribution', 'Subject', 'Department', 'Time/Days']
         colAvail = 1
         self.searchVars = {}
         for box in searchByBoxes: 
             var = IntVar()
             button = Checkbutton(self.topFrameLeft,text=box,variable=var)
-            button.grid(row=0, column=colAvail, sticky=W+E)
+            button.grid(row=0, column=colAvail, sticky=W+E, padx=5)
             self.searchVars[box] = var
             colAvail += 1
       
@@ -139,7 +94,7 @@ class CourseBrowserApp(Tk):
         for box in showOnlyBoxes: 
             var = IntVar()
             button = Checkbutton(self.topFrameRight, text=box, variable=var)
-            button.grid(row=0, column=colAvail, sticky=W+E)
+            button.grid(row=0, column=colAvail, sticky=W+E, padx=5)
             self.showVars[box] = var
             colAvail += 1
             
@@ -194,7 +149,7 @@ class CourseBrowserApp(Tk):
         print criteriaList #testing
         for option in criteriaList:
             if option not in self.createdOptions:
-                optionFrame = ScrollableOptionFrame(self.middleFrame, option, self.distributions, self.subjects, self.departments)
+                optionFrame = ScrollableOptionFrame(self.middleFrame, option, self.distributions, self.subjects, self.departments, self.toSearchVars)
                 optionFrame.pack(side=LEFT)
                 self.createdOptions.append(option)
 
@@ -293,22 +248,23 @@ class ExtraInfoApp(Toplevel):
             instructorText.pack()
 
 class ScrollableOptionFrame(Frame):
-    def __init__(self, master, option, allDistributions, allSubjects, allDepartments, **options):
+    def __init__(self, master, option, allDistributions, allSubjects, allDepartments, searchVars, **options):
         Frame.__init__(self, master, **options)
         self.allDistributions = allDistributions
         self.allSubjects = allSubjects
         self.allDepartments = allDepartments
         self.option = option
-        self.toSearchVars = {}
+        self.toSearchVars = searchVars
         
         self.canvas = Canvas(self, borderwidth=0)
         self.frame = Frame(self.canvas, relief=SUNKEN)
         self.vsb = Scrollbar(self, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.vsb.set)
-        self.canvas.config(scrollregion=(0,0,250,250))
-
-        self.vsb.pack(side=RIGHT, fill=Y)
+        self.canvas.config(scrollregion=(0,0,250,1500))
+        
         self.canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
+        self.vsb.pack(side=RIGHT, fill=Y)
+            
         self.canvas.create_window((0,0), window=self.frame, anchor=N+W)
 
         self.populate()
@@ -319,13 +275,14 @@ class ScrollableOptionFrame(Frame):
             textStr = self.option.upper() + ":"
         else:
             textStr = self.option.upper() + "S:"
-        distLabel = Label(self.frame, text=textStr, fg='navy', font='Times 16 bold')
+        distLabel = Label(self.frame, text=textStr, fg='navy', font='Times 16 bold', justify=CENTER)
         distLabel.pack(fill=X)
         if self.option.upper() == "distribution".upper(): infoList = self.allDistributions
         elif self.option.upper() == "subject".upper(): infoList = self.allSubjects
-        elif self.option.upper() == "department".upper(): infoList = self.allDepartments.keys()
-        elif self.option.upper() == "time/days".upper(): infoList = []
-        elif self.option.upper() == "professor".upper(): infoList = []
+        elif self.option.upper() == "department".upper(): infoList = sorted(self.allDepartments.keys())
+        elif self.option.upper() == "time/days".upper(): infoList = ['Monday', 'Tuesday', 'Wednesday', \
+                                                                     'Thursday', 'Friday']
+                                    # need to figure out how to search by time frame
                 
         length = len(infoList)
         self.vars = {}
@@ -335,8 +292,52 @@ class ScrollableOptionFrame(Frame):
             self.vars[infoList[i]] = var
             button.pack(fill=X, anchor=W)
         self.toSearchVars[self.option] = self.vars
-        
 
+# http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
+class ScrolledFrame(Frame):
+    """A pure Tkinter scrollable frame that actually works!
+    * Use the 'interior' attribute to place widgets inside the scrollable frame
+    * Construct and pack/place/grid normally
+    """
+    def __init__(self, parent, *args, **kw):
+        Frame.__init__(self, parent, *args, **kw)            
+
+        # create a canvas object and a vertical scrollbar for scrolling it
+        vscrollbar = Scrollbar(self, orient=VERTICAL)
+        vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
+        hscrollbar = Scrollbar(self, orient=HORIZONTAL)
+        hscrollbar.pack(fill=X, side=BOTTOM, expand=FALSE)
+        canvas = Canvas(self, bd=0, highlightthickness=0,
+                        yscrollcommand=vscrollbar.set, xscrollcommand=hscrollbar.set)
+        canvas.pack(fill=BOTH, expand=TRUE)
+        vscrollbar.config(command=canvas.yview)
+        hscrollbar.config(command=canvas.xview)
+
+        # reset the view
+        canvas.xview_moveto(0)
+        canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.interior = interior = Frame(canvas)
+        interior_id = canvas.create_window(0, 0, window=interior,
+                                           anchor=NW)
+
+        # track changes to the canvas and frame width and sync them,
+        # also updating the scrollbar
+        def _configure_interior(event):
+            # update the scrollbars to match the size of the inner frame
+            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
+            canvas.config(scrollregion="0 0 %s %s" % size)
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the canvas's width to fit the inner frame
+                canvas.config(width=interior.winfo_reqwidth())
+        interior.bind('<Configure>', _configure_interior)
+
+        def _configure_canvas(event):
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the inner frame's width to fill the canvas
+                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+        canvas.bind('<Configure>', _configure_canvas)
 
 app = CourseBrowserApp()
 app.mainloop()
