@@ -48,6 +48,7 @@ class CourseBrowserApp(Tk):
         self.createdOptions = []
         self.toSearchVars = {}
         self.optionButtonClicked = False
+        self.scheduleInProgress = False
         
         self.createFrames()
         self.createWidgets()
@@ -110,16 +111,17 @@ class CourseBrowserApp(Tk):
         font='Times 12 italic')
         coursesHelpText.grid(sticky=E+W, row=1)
        
-        mlb = CourseResultsBox(self.bottomFrame)
-        mlb.grid_(row=2, column=0, sticky=E+W)
+        self.mlb = CourseResultsBox(self.bottomFrame)
+        self.mlb.grid_(row=2, column=0, sticky=E+W)
         
         # Button section ---------->
         updateButton = Button(self.buttonFrame, text='Update Courses', command=scraper.updateCourseInfo)
         updateButton.grid(row=0, column=0)
-        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule")
+        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command = self.makeSchedule)
         makeScheduleButton.grid(row=0, column=1)
-        notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, \
-        and that updating the courses may take a few minutes.", font='Times 12 italic')
+        delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
+        delScheduleButton.grid(row=0, column=2)
+        notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", font='Times 12 italic')
         notes.grid(row=1, columnspan=2)
 
     def checkSearchButtons(self): 
@@ -153,19 +155,53 @@ class CourseBrowserApp(Tk):
                 optionFrame.pack(side=LEFT)
                 self.createdOptions.append(option)
 
+    def makeSchedule(self):
+        print self.mlb.getScheduleInfo() #need to re-format day/time
+        proposedSchedule = Schedule()
+
+
+class Schedule(Toplevel):
+    def __init__(self):
+        Toplevel.__init__(self)
+        self.title('Proposed Schedule')
+        self.canvasWidth = 500
+        self.canvasHeight = 525
+        self.canvas = Canvas(self, width=self.canvasWidth,height=self.canvasHeight)
+        self.canvas.pack(expand=YES, fill=BOTH)
+        self.createBlankSchedule()
+
+    def createBlankSchedule(self):
+        vDistApart = self.canvasHeight/14
+        self.canvas.create_line(0,25, self.canvasWidth, 25)
+        hour = 8
+        for i in range(1,15):
+            self.canvas.create_text(0, (vDistApart*i-20), text=str(hour)+':00', fill="red", anchor=W)
+            hour += 1
+            self.canvas.create_line(0, (vDistApart*i)+25, self.canvasWidth, (vDistApart*i)+25)
+            self.canvas.create_line(0, (vDistApart*i)-(vDistApart*.5)+25, self.canvasWidth, (vDistApart*i)-(vDistApart*.5)+25, dash=(4,4))
+        
+        
+
 class CourseResultsBox(): 
         def __init__(self, master, **kwargs): 
-            columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available', 
+            self.columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available', 
             'Location(s)', 'Day/Time', 'Instructor', 'Distribution(s)']
             columnTuples = [('CRN',45), ('Course',90), ('Title',200), ('Seats Avail.',75),\
             ('Location(s)',100), ('Day/Time',200), ('Instructor',125), ('Distribution(s)',250)]
             self.box = mlb.MultiListbox(master, columnTuples)
-            self.createStartingTableContent(columnHeaders)
+            self.createStartingTableContent()
             self.box.bind("<Return>", self.onReturn)
             self.extraInfoApp = None
      
         def grid_(self, **kwargs): 
             self.box.grid(**kwargs)
+
+        def getScheduleInfo(self):
+            '''Returns the CRN, course name, title, and days/times as a dictionary'''
+            d = {}
+            for num in [0,1,2,5]:
+                d[self.columnHeaders[num]] = self.box.get(self.box.curselection())[num]
+            return d
         
         def onReturn(self, event):
             '''Creates the extra info toplevel frame when return is hit while selecting a course in the listbox''' 
@@ -182,11 +218,11 @@ class CourseResultsBox():
                 self.extraInfoApp = ExtraInfoApp(description, prereqs)
                 self.extraInfoApp.mainloop()
         
-        def createStartingTableContent(self, columnHeaders):
+        def createStartingTableContent(self):
             '''Adds all course data into the listbox'''
             for course in scraper.readCourseFile():
                 courseInfo = []
-                for header in columnHeaders: 
+                for header in self.columnHeaders: 
                     try: 
                         if type(course[header]) is str:
                             courseInfo.append(course[header])
@@ -210,7 +246,7 @@ class CourseResultsBox():
                 self.box.insert (END, courseInfo)  
         
         # will be used to update the info in the listbox given the criteria
-        def updateCourseInfo(self, columnHeaders): 
+        def updateCourseInfo(self): 
             pass
             
 class ExtraInfoApp(Toplevel): 
