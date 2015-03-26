@@ -9,52 +9,35 @@ class CourseBrowserApp(Tk):
         Tk.__init__(self)
         self.title('Course Browser')
         self.grid()
-        
-        #this data needs to be stored somewhere else, and scraped w/ the other data
-        self.distributions = ['Arts, Music, Theatre, Film, Video', 'Epistemology & Cognition', \
-        'Historical Studies', 'Language & Literature', 'Mathematical Modeling', \
-        'Natural & Physical Sciences', 'Religion, Ethics, & Moral Philosophy', \
-        'Social & Behavioral Analysis', 'QRB', 'QRF']
-        self.subjects = ['Africana Studies', 'American Studies', 'Anthropology', 'Arabic', \
-        'Art History', 'Art-Studio', 'Astronomy', 'Biochemistry', 'Biological Science', \
-        'Cinema and Media Studies', 'Chemistry', 'Chinese Language and Culture', \
-        'Classical Civilization', 'Cognitive and Linguistic Science', 'Comparative Literature', \
-        'Computer Science', 'East Asian Languages and Cultures', 'Economics', 'Education', \
-        'English', 'Engineering', 'Environmental Studies', 'Extradepartmental', 'French', \
-        'Geosciences', 'German', 'Greek', 'Hebrew', 'History', 'Hindi/Urdu', 'Italian Studies', \
-        'Japanese Lang and Culture', 'Korean Lang and Culture', 'Latin', 'Linguistics', 'Mathematics', \
-        'Medieval/Renaissance', 'Middle Eastern Studies', 'Music', 'Neuroscience', \
-        'Physical Education', 'Peace and Justice Studies', 'Philosophy', 'Physics', \
-        'Political Science', 'Portugeuse', 'Psychology', 'Quantitive Reasoning', \
-        'Russian Area Studies', 'Religion', 'Russian', 'South Asia Studies', 'Sociology', \
-        'Spanish', 'Sustainability', 'Swahili', 'Theatre Studies', 'Women\'s & Gender Studies', \
-        'Writing']
-        self.departments = {'Africana Studies': 'AFR', 'American Studies': 'AMST', \
-        'Anthropology': 'ANTH', 'Art':['ARTH','ARTS'], 'Astronomy':'ASTR', 'Biological Chemistry':'BIOC', \
-        'Biological Sciences':'BISC', 'Cinema & Media Studies':'CAMS', 'Chemistry':'CHEM', \
-        'Cognitive and Linguistic Sci':['CLSC','LING'], 'Classical Studies':['CLCV','LAT','GRK'], \
-        'Comparative Literature':'CPLT', 'Computer Science':'CS', 'East Asian Languages and Culture':['CHIN', 'EALC', 'JPN', 'KOR'],\
-        'Economics':'ECON', 'Education':'EDUC', 'English':'ENG', 'Environmental Studies':'ES', \
-        'Extradepartmental':['ENGR','EXTD'], 'French':'FREN', 'Geosciences':'GEOS', \
-        'German':'GER', 'History':'HIST', 'Italian Studies':'ITAS', 'Jewish Studies':'HEBR', \
-        'Mathematics':'MATH', 'Medieval Renaissance Studies':'ME/R', 'Middle Eastern Studies':['ARAB','MES'], \
-        'Music':'MUS', 'Neuroscience':'NEUR', 'Physical Education':'PE', 'Peace and Justice Studies':'PEAC', \
-        'Philosophy':'PHIL', 'Physics':'PHYS','Political Science':['POL', 'POL1', 'POL2', 'POL3', 'POL4'], \
-        'Psychology':'PSYC', 'Quantitative Reasoning':'QR', 'Russian Area Studies':'RAST', \
-        'Religion':'REL', 'Russian':'RUSS', 'South Asia Studies':['HNUR','SAS'], 'Sociology':'SOC', \
-        'Spanish':'SPAN', 'Sustainability':'SUST', 'Theatre Studies':'THST', 'Women\'s and Gender Studies':'WGST',\
-        'Writing':'WRIT'}
 
+        try:
+            self.distributions = scraper.readDistFile()
+            self.subjects = scraper.readSubjFile()
+            self.departments = scraper.readDeptFile()
+            self.allCourses = scraper.readCoursesFile()
+        except IOError:
+            scraper.updateAll()
+            self.distributions = scraper.readDistFile()
+            self.subjects = scraper.readSubjFile()
+            self.departments = scraper.readDeptFile()
+            self.allCourses = scraper.readCoursesFile()
+
+        self.selectedCourses = {} # will be used to hold the courses that are currently in the mlb --> the ones that fit the criteria 
         self.createdOptions = []
         self.toSearchVars = {}
-        self.optionButtonClicked = False
-        self.scheduleInProgress = False
+        self.scheduleInProgress = None
+
+#        self.pleaseSelectExists = False # please select label exists
+        self.showCoursesButtonExists = False # show courses button exists
         
         self.createFrames()
         self.createWidgets()
         
     def createFrames(self): 
         '''Creates the frames (and a canvas) to organize all the information in the main app and create scrollbars'''
+
+        # smaller frames are packed into the main frame, smaller frames use grid
+        
         self.mainFrame = ScrolledFrame(self)
         self.mainFrame.pack(fill=BOTH, expand=TRUE)
         
@@ -122,7 +105,7 @@ class CourseBrowserApp(Tk):
         delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
         delScheduleButton.grid(row=0, column=2)
         notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", font='Times 12 italic')
-        notes.grid(row=1, columnspan=2)
+        notes.grid(row=1, columnspan=3)
 
     def checkSearchButtons(self): 
         '''Check the state of the 'Search By' checkbuttons and returns a list w/the name of those that were clicked '''
@@ -143,43 +126,123 @@ class CourseBrowserApp(Tk):
         return criteriaList
     
     def createCriteriaOptions(self):
-        if self.optionButtonClicked == False: #only create the showCoursesButton when options are displaying
-            showCoursesButton = Button(self.middleFrame, text="Show me courses!", command=None)
-            showCoursesButton.pack(fill=X)
-            self.optionButtonClicked = True
-        criteriaList = self.checkSearchButtons()
-        print criteriaList #testing
+        criteriaList = self.checkSearchButtons() # check to see what is selected        
+        showCoursesButton = Button(self.middleFrame, text="Show me courses!", command=None)
+
+#               PLEASE SELECT STRUGGLES 
+
+ #       pleaseSelectLabel = Label(self.middleFrame, text="Please select some search criteria for options to be displayed", fg='red', font='Times 14 italic')
+
+
+##        if criteriaList == []:
+##            if(not self.pleaseSelectExists):
+##                pleaseSelectLabel.pack()
+##                self.pleaseSelectExists = True
+##        else:
+            #only pack the showCoursesButton when options are displaying and it hasn't been packed already
+            #destroy the pleaseSelectLabel if no criteria were selected
+##            if(self.pleaseSelectExists):
+##                pleaseSelectLabel.pack_forget()
+##                self.pleaseSelectExists = False
+
+                #add in all the "new" options -- the ones that haven't been displayed yet
         for option in criteriaList:
             if option not in self.createdOptions:
                 optionFrame = ScrollableOptionFrame(self.middleFrame, option, self.distributions, self.subjects, self.departments, self.toSearchVars)
                 optionFrame.pack(side=LEFT)
                 self.createdOptions.append(option)
+        if(not self.showCoursesButtonExists and self.createdOptions != []):
+            showCoursesButton.pack(fill=X)
+            self.showCoursesButtonExists = True
 
     def makeSchedule(self):
-        print self.mlb.getScheduleInfo() #need to re-format day/time
-        proposedSchedule = Schedule()
+        colors = ['orange', 'green', 'purple', 'yellow', 'blue']
+        selectedItem = self.mlb.getScheduleInfo() #need to re-format day/time
+        if self.scheduleInProgress == None:  
+            self.scheduleInProgress = Schedule(selectedItem)
+            self.scheduleInProgress.createBlankSchedule()
+        else:
+            self.scheduleInProgress.addCourse(selectedItem)
+
+     # need to figure out how to get if the schedule has been closed through the x button to set it to None
 
 
 class Schedule(Toplevel):
-    def __init__(self):
+    def __init__(self, selectedItem):
         Toplevel.__init__(self)
         self.title('Proposed Schedule')
         self.canvasWidth = 500
         self.canvasHeight = 525
         self.canvas = Canvas(self, width=self.canvasWidth,height=self.canvasHeight)
         self.canvas.pack(expand=YES, fill=BOTH)
-        self.createBlankSchedule()
+        self.addCourse(selectedItem)
 
     def createBlankSchedule(self):
-        vDistApart = self.canvasHeight/14
+        vDistApart = self.canvasHeight/15
+        hDistApart = self.canvasWidth/6
         self.canvas.create_line(0,25, self.canvasWidth, 25)
         hour = 8
-        for i in range(1,15):
-            self.canvas.create_text(0, (vDistApart*i-20), text=str(hour)+':00', fill="red", anchor=W)
+        amOrPm = 'am'
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        for i in range(1,16): # create the horizontal lines and the hour markings
+            self.canvas.create_text(hDistApart/2-25, (vDistApart*i-20), text=str(hour)+':00' + ' ' + amOrPm, fill="red", anchor=W)
             hour += 1
+            if hour == 13:
+                hour = 1
+                amOrPm = 'pm'
             self.canvas.create_line(0, (vDistApart*i)+25, self.canvasWidth, (vDistApart*i)+25)
-            self.canvas.create_line(0, (vDistApart*i)-(vDistApart*.5)+25, self.canvasWidth, (vDistApart*i)-(vDistApart*.5)+25, dash=(4,4))
+            self.canvas.create_line(hDistApart, (vDistApart*i)-(vDistApart/2)+25, self.canvasWidth, (vDistApart*i)-(vDistApart/2)+25, dash=(4,4))
+
+        for i in range(1, 7): # create the vertical lines and the day markings
+            self.canvas.create_line(hDistApart*i, 0, hDistApart*i, self.canvasHeight+25)
+            if i > 1:
+                self.canvas.create_text(hDistApart*i-(hDistApart/2), 15, text=days[i-2], fill='red')            
+
+    def addCourse(self, selectedItem):
+        #print selectedItem #testing, reference
+        CRN = selectedItem['CRN']
+        title = selectedItem['Title']
+        course = selectedItem['Course']
+
+        #day/times:
+        def makeDayTimeList(selectedItem): 
+            #Right now this only works for 1-3 different day/time combinations -- adapt w/ loops?
+            dayTimeList = []
+            strippedDayTime = selectedItem['Day/Time'].strip(' | ')
+            if strippedDayTime.count('|') == 0:
+                dayTimeList.append(strippedDayTime)
+            else: #if there is more than one day/time "section"
+                charIndex = strippedDayTime.rfind('|')
+                dayTimeList.append(strippedDayTime[:charIndex-1].strip())
+                dayTimeList.append(strippedDayTime[charIndex+2:].strip())
+
+            for n in dayTimeList:
+                if n.count('|') != 0:
+                    charIndex = n.rfind('|')
+                    dayTimeList.append(n[:charIndex-1].strip())
+                    dayTimeList.append(n[charIndex+1:].strip())
+                    dayTimeList.pop(dayTimeList.index(n))
+            return dayTimeList
+
+        # what about things like W2...?
+        dayTimeList = makeDayTimeList(selectedItem)
+        print dayTimeList
+        for n in dayTimeList:
+            daysPerTime = []
+            daysStr = n[:n.find(':')]
+            if 'Th' in daysStr:
+                daysPerTime.append('Th')
+                daysStr = daysStr.strip('Th')
+            daysPerTime += list(daysStr)
+
+            print daysPerTime
+                
+                
+            
         
+        
+        
+
         
 
 class CourseResultsBox(): 
@@ -207,8 +270,7 @@ class CourseResultsBox():
             '''Creates the extra info toplevel frame when return is hit while selecting a course in the listbox''' 
             if self.extraInfoApp!=None: self.extraInfoApp.destroy()
             CRN = self.box.get(self.box.curselection())[0] #get CRN (the first value) from the selection
-            allCourses = scraper.readCourseFile()
-            selectedCourseInfo = (item for item in allCourses if item['CRN'] == CRN).next()
+            selectedCourseInfo = (item for item in self.allCourses if item['CRN'] == CRN).next()
             description = selectedCourseInfo['Description']
             prereqs = selectedCourseInfo['Prerequisite(s)']
             if 'Additional Instructor(s)' in selectedCourseInfo:
@@ -220,7 +282,9 @@ class CourseResultsBox():
         
         def createStartingTableContent(self):
             '''Adds all course data into the listbox'''
-            for course in scraper.readCourseFile():
+            #shouldn't need to put inside try/except since this is only called from within courseBrowserApp, where this is taken care of
+            allCourses = scraper.readCoursesFile()
+            for course in allCourses:
                 courseInfo = []
                 for header in self.columnHeaders: 
                     try: 
@@ -238,8 +302,8 @@ class CourseResultsBox():
                             keys = dictionary.keys()
                             combinedVals = ''
                             for key in keys: 
-                                combinedVals = combinedVals + ' | ' + key + ': ' + dictionary[key]
-                            courseInfo.append(combinedVals + ' |')
+                                combinedVals = combinedVals + key + ': ' + dictionary[key] + ' | '
+                            courseInfo.append(combinedVals)
                     except KeyError: #When the key doesn't exist (ex: for courses w/no additional instructor)
                         courseInfo.append('') #use blank string
             
