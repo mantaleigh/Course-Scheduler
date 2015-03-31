@@ -1,6 +1,6 @@
 # Course Browser Scraper
 # Samantha Voigt
-# last edit: 3.19.15
+# last edit: 3.29.15
 
 from bs4 import BeautifulSoup as bs
 import urllib2
@@ -10,7 +10,7 @@ import ast
 #associated with it. Since, as far as I can see, there is no way to scrape every
 #subject acroynym associated with a department without doing it by hand.
 # --- however, this does provide a function for writing a file with the information
-# --- I garnered without scraping. 
+# --- I garnered without scraping.
 
 def getSoup():
     print "Creating soup..."
@@ -18,7 +18,7 @@ def getSoup():
     return bs(page)
 
 # ------------------------------------------------------------------------------
-#                                  GET INFO 
+#                                  GET INFO
 # ------------------------------------------------------------------------------
 
 # returns a list of the distributions, scraped from the drop down menu at the top of the page
@@ -44,88 +44,97 @@ def getDepartments():
     #eventually hopefully this will be able to do something of use...
     pass
 
-def getAllCourses(): 
-    '''Scrapes all course information from the Wellesley College Course Browser and 
+def getAllCourses():
+    '''Scrapes all course information from the Wellesley College Course Browser and
     returns a list of dictionaries corresponding to each course'''
-    listOfCourses = []
+    listOfCourses = [] # will hold all the class dictionaries
     cellNames = ['CRN', 'Course', 'Title', 'Current Enrollment', 'Seats Available', \
     'Location(s)', 'Meeting Time(s)', 'Days(s)', 'Instructor', 'Additional Instructor(s)', \
     'Distribution(s)', 'Description', 'Prerequisites']
     soup = getSoup()
     tableContent = soup.find('tbody')
-    
-    for row in tableContent.find_all('tr'):
+
+#    row = tableContent.find_all('tr')[424]
+    for row in tableContent.find_all('tr'): # each row corresponds to an individual course
         indivClassDict = {}
         timeList = []
         cellNum = 0
         for cell in row.find_all('th'): #every loop is a new if statement that corresponds to cellNum
-           
-            if cell.contents != []:     
-                if cellNum == 0 or cellNum == 2 or cellNum == 3 or (cellNum == 10 and len(cell.contents) == 1): 
-                    # save CRN, Title, Current Enrollment, and distribution (if there is only one)
+            if cell.contents != []: # only want to save information if there is information to save...
+
+                # ---------- CRN, TITLE, CURRENT ENROLLMENT, DISTRIBUTION (IF ONLY ONE) -----------
+                if cellNum == 0 or cellNum == 2 or cellNum == 3 or (cellNum == 10 and len(cell.contents) == 1):
                     indivClassDict[cellNames[cellNum]] = cell.string.encode('utf-8')
-                    
+
+                # ----------- MULTIPLE DISTRIBUTIONS ----------------------------------------------
                 elif (cellNum == 10 and len(cell.contents) > 1): #when there is more than 1 distribution
                     distList = []
                     for dist in cell.text.split('\n'):
                         distList.append(dist.encode('utf-8'))
-                    indivClassDict[cellNames[cellNum]] = distList        
-                
-                elif cellNum == 6: # save times in a list
-                    if len(cell.contents) > 1: 
+                    indivClassDict[cellNames[cellNum]] = distList # save the list of distributions into the course dict
+
+                # ----------- MEETING TIME(S) -----------------------------------------------------
+                elif cellNum == 6:
+                    if len(cell.contents) > 1: # if there is more than one meeting time
                         for time in cell.text.split('\n'):
-                            timeList.append(time.encode('utf-8'))
-                    else: 
-                        timeList.append(cell.string.encode('utf-8'))
-                
-                # Handles making a day/time dict
+                            timeList.append(time.encode('utf-8')) # append each time as a different elt in the list
+                    else:
+                        timeList.append(cell.string.encode('utf-8')) # otherwise append the single time to the list
+
+                # ----------- MATCHES DAYS WITH TIME(S) -------------------------------------------
                 elif cellNum == 7:
-                    dayTimeDict = {}
-                    for i in range(1, len(cell.text.split('\n'))):
-                        dayName = cell.text.split('\n')[i].encode('utf-8')
-                        dayTimeDict[dayName] = timeList[i-1]
+                    dayTimeDict = {} # dictionary to hold corresponding days and times
+                    for i in range(1, len(cell.text.split('\n'))): # for each day section (usually only 1 or 2)
+                        allDaysForOneTime = cell.text.split('\n')[i]# get all the days for a certain time
+                        for day in ["Th", "M", "T", "W", "F"]: #Th must be first since it's two chars and might be confused with T
+                            if day in allDaysForOneTime:
+                                dayTimeDict[day] = timeList[i-1] #save that day and corresponding time into the dict
+                                allDaysForOneTime = allDaysForOneTime.replace(day,"") # update the allDays var to be all days we haven't covered
                     indivClassDict['Day/Time'] = dayTimeDict
-                        
-                elif cellNum == 1 or cellNum == 5 or cellNum == 8 or cellNum == 9: 
+
+                elif cellNum == 1 or cellNum == 5 or cellNum == 8 or cellNum == 9:
                     # save Course, Location(s), and Instructor and Additional Instructor
                     if cell.find('a').contents != []:
                         indivClassDict[cellNames[cellNum]] = cell.find('a').string.encode('utf-8')
-                
-                elif cellNum == 4: 
+
+                elif cellNum == 4:
                     # save Seats Available
                     indivClassDict[cellNames[cellNum]] = cell.next.next.next.string.strip('\n').encode('utf-8')
-                
+
                 # save description and the prereqs from the 'more' link
-                elif cellNum == 11: 
+                elif cellNum == 11:
                     linkTag = str(cell.find('a'))
                     linkPt2 = linkTag[linkTag.find('=')+2:linkTag.find(' onclick')-1]
                     moreLink = ('http://courses.wellesley.edu/' + linkPt2).replace('&amp;','&')
                     page2 = urllib2.urlopen(moreLink)
-                    soup2 = bs(page2)     
-                    
+                    soup2 = bs(page2)
+
                     # get description:
                     descStr = ''
-                    for string in soup2.find(text="Description").next.next.stripped_strings:
-                        descStr = descStr + ' ' + string.encode('utf-8')
+                    try:
+                        for string in soup2.find(text="Description").next.next.stripped_strings:
+                            descStr = descStr + ' ' + string.encode('utf-8')
+                    except AttributeError: # Except when the description is curiously blank...
+                        descStr = 'Not provided'
                     indivClassDict[cellNames[cellNum]] = descStr
-                    
+
                     # get prereqs:
                     try:
                         prereqStr = soup2.find(text="Prerequisite(s)").next.next.string.encode('utf-8')
-                    except AttributeError: 
+                    except AttributeError:
                         prereqStr = 'Not provided'
                     indivClassDict['Prerequisite(s)'] = prereqStr
-            
-            #needs to be a separate if statement, not an elif 
+
+            #needs to be a separate if statement, not an elif
             if cellNum <= len(cellNames):
                 cellNum += 1
-    
+
         listOfCourses.append(indivClassDict) #should go inside the first loop, but outside the second
-        print indivClassDict['CRN']
+        print "Saving course with CRN: " + indivClassDict['CRN']
     return listOfCourses
 
 # ------------------------------------------------------------------------------
-#                                WRITE INFO 
+#                                WRITE INFO
 # ------------------------------------------------------------------------------
 
 def writeCoursesFile(L):
@@ -173,25 +182,25 @@ def writeDeptFile():
     deptFile.close()
 
 # ------------------------------------------------------------------------------
-#                                READ INFO 
+#                                READ INFO
 # ------------------------------------------------------------------------------
-    
-def readCoursesFile(): 
+
+def readCoursesFile():
     '''Returns the basic python type (list of dicts) that corresponds to the string inside of the coursesFile'''
     s = open('coursesFile.txt', 'r').read()
     return ast.literal_eval(s)
 
-def readDistFile(): 
+def readDistFile():
     '''Returns the basic python type (list) that corresponds to the string inside of the distibutions file'''
     s = open('distributionFile.txt', 'r').read()
     return ast.literal_eval(s)
 
-def readSubjFile(): 
+def readSubjFile():
     '''Returns the basic python type (list) that corresponds to the string inside of the subject file'''
     s = open('subjectFile.txt', 'r').read()
     return ast.literal_eval(s)
 
-def readDeptFile(): 
+def readDeptFile():
     '''Returns the basic python type (dict) that corresponds to the string inside of the deptartment file'''
     s = open('departmentFile.txt', 'r').read()
     return ast.literal_eval(s)
@@ -200,9 +209,9 @@ def readDeptFile():
 #                   UPDATE INFO -- calls above functions
 # ------------------------------------------------------------------------------
 
-def updateCourseInfo(): 
-    '''When a new file of course info needs to get written (or re-written), this 
-    funtion will either update the file or write a new one. Will also return the list 
+def updateCourseInfo():
+    '''When a new file of course info needs to get written (or re-written), this
+    funtion will either update the file or write a new one. Will also return the list
     of courses for immediate use. '''
     listOfCourses = getAllCourses()
     writeCoursesFile(listOfCourses)
@@ -223,4 +232,3 @@ def updateAll():
     writeSubjFile(getSubjects())
     writeDeptFile()
     return listOfCourses
-
