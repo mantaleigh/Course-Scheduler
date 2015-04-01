@@ -1,6 +1,6 @@
 ######################################################################
 #
-#    File:       mhMultiListBox.py
+#    File:       MultiListBox.py
 #
 #    Purpose:    Multi-column list box.  Acts mostly like a regular
 #                tkinter listbox + scrollbar, but supports multiple
@@ -9,7 +9,7 @@
 #                o Enhanced version of MultiListBox.py by Bob Hauck
 #                  which can be found at <http://www.haucks.org/>
 #                o Based on work by Brent Burley found at:
-#                  
+#
 #<http://aspn.activestate.com/ASPN/Python/Cookbook/Recipe/52266>
 #                o Uses code of SortedTable by Rick Lawson found at
 #                  <http://tkinter.unpythonic.net/wiki/SortableTable>
@@ -22,7 +22,7 @@
 #                  o Sorts when column labels are clicked.
 #                  o Includes a vertical scrollbar.
 #                  o No external libraries except tkinter.
-#                   
+#
 #                Limitations:
 #                  o Only single selection.
 #                  o No horizontal scrolling.
@@ -34,7 +34,7 @@
 #    Copyright 2001, Codem Systems Inc.,  All rights reserved.
 #
 #    Codem Systems, Inc.
-#    7 Executive Park Drive, 
+#    7 Executive Park Drive,
 #    Merrimack, NH  03054
 #
 # License
@@ -46,7 +46,7 @@
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
@@ -108,7 +108,7 @@ class MultiListbox(Frame):
         for k in aliases.keys ():
             if options.has_key (k):
                 options [aliases[k]] = options [k]
-            
+
         for key in defaults.keys():
             if not options.has_key (key):
                 options [key] = defaults [key]
@@ -122,7 +122,7 @@ class MultiListbox(Frame):
         self.origData = None
 
         #  Keyboard navigation.
-        
+
         self.bind ('<Up>',    lambda e, s=self: s._move (-1, MOVE_LINES))
         self.bind ('<Down>',  lambda e, s=self: s._move (+1, MOVE_LINES))
         self.bind ('<Prior>', lambda e, s=self: s._move (-1, MOVE_PAGES))
@@ -133,11 +133,11 @@ class MultiListbox(Frame):
             self.bind ('<Return>', command)
 
         # Columns are a frame with listbox and label in it.
-        
+
         # MH (05/2004):
         # Introduced a PanedWindow to make the columns resizable
-        
-        m = PanedWindow(self, orient=HORIZONTAL, bd=0, 
+
+        m = PanedWindow(self, orient=HORIZONTAL, bd=0,
 background=options['background'], showhandle=0, sashpad=1)
         m.pack(side=LEFT, fill=BOTH, expand=1)
 
@@ -151,7 +151,7 @@ background=options['background'], showhandle=0, sashpad=1)
             b.bind('<Button-1>', self._sort)
 
             self.colmapping[b]=(len(self.lists),1)
-            
+
             lb = Listbox (lbframe,
                           width=width,
                           height=options ['height'],
@@ -166,7 +166,7 @@ background=options['background'], showhandle=0, sashpad=1)
             self.lists.append (lb)
 
             # Mouse features
-            
+
             lb.bind ('<B1-Motion>', lambda e, s=self: s._select (e.y))
             lb.bind ('<Button-1>',  lambda e, s=self: s._select (e.y))
             lb.bind ('<Leave>',     lambda e: 'break')
@@ -191,9 +191,9 @@ background=options['background'], showhandle=0, sashpad=1)
 
 
     # MH (05/2004)
-    # Sort function, adopted from Rick Lawson 
+    # Sort function, adopted from Rick Lawson
     # http://tkinter.unpythonic.net/wiki/SortableTable
-    
+
     def _sort(self, e):
         # get the listbox to sort by (mapped by the header button)
         b=e.widget
@@ -229,11 +229,11 @@ background=options['background'], showhandle=0, sashpad=1)
         for row in range(rowcount):
             self.insert(END, tableData[row])
 
-        # toggle direction flag 
+        # toggle direction flag
         if direction==1: direction=-1
         else: direction += 1
-        self.colmapping[b] = (col, direction) 
-        
+        self.colmapping[b] = (col, direction)
+
 
     def _move (self, lines, relative=0):
         """
@@ -253,7 +253,7 @@ background=options['background'], showhandle=0, sashpad=1)
 
         old  = sel
         size = self.lists [0].size ()
-        
+
         if relative == MOVE_LINES:
             sel = sel + lines
         elif relative == MOVE_PAGES:
@@ -270,7 +270,7 @@ background=options['background'], showhandle=0, sashpad=1)
             sel = 0
         elif sel >= size:
             sel = size - 1
-        
+
         self.selection_clear (old, old)
         self.see (sel)
         self.selection_set (sel)
@@ -340,7 +340,7 @@ background=options['background'], showhandle=0, sashpad=1)
             return apply (map, [None] + result)
         return result
 
-            
+
     def index (self, index):
         """
         Adjust the view so that the given index is at the top.
@@ -360,7 +360,7 @@ background=options['background'], showhandle=0, sashpad=1)
                 i = i + 1
         if self.size () == 1:
             self.selection_set (0)
-            
+
 
     def size (self):
         """
