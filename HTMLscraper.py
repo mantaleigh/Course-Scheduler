@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup as bs
 import urllib2
 import ast
 
+#TODO -- Not object oriented
+#TODO -- Can this be more efficient than O(n^2)? (or, god... even worse)
+
 #note that the only thing this doesn't do is scrape departments and their acronyms
 #associated with it. Since, as far as I can see, there is no way to scrape every
 #subject acroynym associated with a department without doing it by hand.
@@ -121,7 +124,7 @@ def getAllCourses():
                     # get prereqs:
                     try:
                         prereqStr = soup2.find(text="Prerequisite(s)").next.next.string.encode('utf-8')
-                    except AttributeError:
+                    except AttributeError: # when there is no prereq
                         prereqStr = 'Not provided'
                     indivClassDict['Prerequisite(s)'] = prereqStr
 
@@ -130,7 +133,7 @@ def getAllCourses():
                 cellNum += 1
 
         listOfCourses.append(indivClassDict) #should go inside the first loop, but outside the second
-        print "Saving course with CRN: " + indivClassDict['CRN']
+        print "Saving course with CRN: " + indivClassDict['CRN'] #since it takes a fair amount of time to scrape all the data, this helps know that the program is running
     return listOfCourses
 
 # ------------------------------------------------------------------------------

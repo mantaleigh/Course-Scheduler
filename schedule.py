@@ -50,7 +50,11 @@ class Schedule(Toplevel):
             self.currentColorIndex+=1
         else: self.currentColorIndex = 0
 
+        # TODO
+        # currently looping through all selected courses because I don't have an easily usable 
+        # version of day and times stored in the table. --- need to improve 
         for item in self.selectedCourses:
+           # print item #testing
             if item['CRN'] == CRN:
                 times = item['Day/Time'] # is a dictionary
 
@@ -78,12 +82,14 @@ class Schedule(Toplevel):
                 else: endi = endHour + 4
 
             try:
-                startMinI = 1#60/startMin
-            except ZeroDivisionError: startMinI = 1
+                print "startMin " + str(startMin)
+                startMinI = float(startMin)/60.0 + 1.0
+            except ZeroDivisionError: startMinI = 1 # 1 means that the time is on the hour
 
             try:
-                endMinI = 1#60/endMin
-            except ZeroDivisionError: endMinI = 1
+                print "endMin " + str(endMin)
+                endMinI = float(endMin)/60.0  + 1.0
+            except ZeroDivisionError: endMinI = 1 # 1 means that the time is on the hour
 
             dayi = dayToiValDict[day]
             self.canvas.create_polygon(self.hDistApart*dayi, ((self.vDistApart*(starti)+25)*startMinI), self.hDistApart*(dayi+1), ((self.vDistApart*(starti)+25)*startMinI), self.hDistApart*(dayi+1), ((self.vDistApart*(endi)+25)*endMinI), self.hDistApart*dayi, ((self.vDistApart*(endi)+25)*endMinI), fill=color)
