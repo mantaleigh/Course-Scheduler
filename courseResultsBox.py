@@ -3,10 +3,10 @@
 
 from Tkinter import *
 import multiListBox as mlb
-import HTMLscraper as scraper
+#import HTMLscraper as scraper
 
 class CourseResultsBox():
-        def __init__(self, master, **kwargs):
+        def __init__(self, master, scraper, **kwargs):
             self.columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available',
             'Location(s)', 'Day/Time', 'Instructor', 'Distribution(s)']
             columnTuples = [('CRN',45), ('Course',90), ('Title',200), ('Seats Avail.',75),\

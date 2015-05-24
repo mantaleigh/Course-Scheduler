@@ -12,18 +12,19 @@ class CourseBrowserApp(Tk):
         Tk.__init__(self)
         self.title('Course Browser')
         self.grid()
+        self.scrape = scraper.BrowserScraper()
 
         try:
-            self.distributions = scraper.readDistFile()
-            self.subjects = scraper.readSubjFile()
-            self.departments = scraper.readDeptFile()
-            self.allCourses = scraper.readCoursesFile()
+            self.distributions = self.scrape.readDistFile()
+            self.subjects = self.scrape.readSubjFile()
+            self.departments = self.scrape.readDeptFile()
+            self.allCourses = self.scrape.readCoursesFile()
         except IOError:
-            scraper.updateAll()
-            self.distributions = scraper.readDistFile()
-            self.subjects = scraper.readSubjFile()
-            self.departments = scraper.readDeptFile()
-            self.allCourses = scraper.readCoursesFile()
+            self.scrape.updateAll()
+            self.distributions = self.scrape.readDistFile()
+            self.subjects = self.scrape.readSubjFile()
+            self.departments = self.scrape.readDeptFile()
+            self.allCourses = self.scrape.readCoursesFile()
 
         self.selectedCourses = self.allCourses # will be used to hold the courses that are currently in the mlb --> the ones that fit the criteria
                                                # starts out being all courses
@@ -98,11 +99,11 @@ class CourseBrowserApp(Tk):
         font='Times 12 italic')
         coursesHelpText.grid(sticky=E+W, row=1)
 
-        self.mlb = CourseResultsBox(self.bottomFrame)
+        self.mlb = CourseResultsBox(self.bottomFrame, self.scrape)
         self.mlb.grid_(row=2, column=0, sticky=E+W)
 
         # Button section ---------->
-        updateButton = Button(self.buttonFrame, text='Update Courses', command=scraper.updateCourseInfo)
+        updateButton = Button(self.buttonFrame, text='Update Courses', command=self.scrape.updateCourseInfo)
         updateButton.grid(row=0, column=0)
         makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command = self.makeSchedule)
         makeScheduleButton.grid(row=0, column=1)
