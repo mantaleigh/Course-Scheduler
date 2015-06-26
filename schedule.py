@@ -53,7 +53,7 @@ class Schedule(Toplevel):
         # TODO
         # currently looping through all selected courses because I don't have an easily usable 
         # version of day and times stored in the table. --- need to improve 
-        for item in self.selectedCourses:
+        for item in self.selectedCourses.values():
            # print item #testing
             if item['CRN'] == CRN:
                 times = item['Day/Time'] # is a dictionary

@@ -3,26 +3,24 @@
 
 from Tkinter import *
 import multiListBox as mlb
-#import HTMLscraper as scraper
 
 class CourseResultsBox():
-        def __init__(self, master, scraper, **kwargs):
+        def __init__(self, master, startingCourses, **kwargs):
             self.columnHeaders = ['CRN', 'Course', 'Title', 'Seats Available',
             'Location(s)', 'Day/Time', 'Instructor', 'Distribution(s)']
             columnTuples = [('CRN',45), ('Course',90), ('Title',200), ('Seats Avail.',75),\
             ('Location(s)',100), ('Day/Time',200), ('Instructor',125), ('Distribution(s)',250)]
             self.box = mlb.MultiListbox(master, columnTuples)
-            try:
-                self.selectedCourses = scraper.readCoursesFile() # starts out as all the courses
-            except IOError:
-                scraper.updateCourseInfo()
-                self.selectedCourses = scraper.readCoursesFile()
+            self.selectedCourses = startingCourses
             self.populateTableContent()
             self.box.bind("<Return>", self.onReturn)
             self.extraInfoApp = None
 
         def grid_(self, **kwargs):
             self.box.grid(**kwargs)
+
+        def pack_(self, **kwargs): 
+            self.box.pack(**kwargs)
 
         def getScheduleInfo(self):
             '''Returns the CRN, course name, title, and days/times as a dictionary'''
@@ -35,7 +33,7 @@ class CourseResultsBox():
             '''Creates the extra info toplevel frame when return is hit while selecting a course in the listbox'''
             if self.extraInfoApp!=None: self.extraInfoApp.destroy()
             CRN = self.box.get(self.box.curselection())[0] #get CRN (the first value) from the selection
-            selectedCourseInfo = (item for item in self.selectedCourses if item['CRN'] == CRN).next()
+            selectedCourseInfo = (course for course in self.selectedCourses.values() if course['CRN'] == CRN).next()
             description = selectedCourseInfo['Description']
             prereqs = selectedCourseInfo['Prerequisite(s)']
             if 'Additional Instructor(s)' in selectedCourseInfo:
@@ -47,7 +45,7 @@ class CourseResultsBox():
 
         def populateTableContent(self):
             '''Deletes previous course data and adds course data (from selectedCourses) into the listbox'''
-            for course in self.selectedCourses:
+            for course in self.selectedCourses.values():
                 courseInfo = []
                 for header in self.columnHeaders:
                     try:
@@ -79,7 +77,7 @@ class CourseResultsBox():
 
                 self.box.insert(END, courseInfo)
 
-        # updates the table using a new list of dicts that represent courses
+        # updates the table using a new dict of dicts that represent courses
         def updateCourseInfo(self, newCourses):
             self.selectedCourses = newCourses
             populateTableContent()

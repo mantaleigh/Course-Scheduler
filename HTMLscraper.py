@@ -1,6 +1,6 @@
 # Course Browser Scraper
 # Samantha Voigt
-# last edit: 3.29.15
+# last edit: 6.26.15
 
 from bs4 import BeautifulSoup as bs
 from bs4 import SoupStrainer
@@ -42,7 +42,10 @@ class BrowserScraper():
         #eventually hopefully this will be able to do something of use...
         pass
 
-    # ------ methods that take information from a row of cells and saves it into a given dictionary ------
+    # ------------------------------------------------------------------------------
+    #                       GET COURSE-SPECIFIC INFO
+    # ------------------------------------------------------------------------------
+    #  methods that take information from a row of cells and saves it into a given dictionary 
     def saveCRN(self, rowCells, courseDict): 
         if rowCells[0].contents != []:
           courseDict['CRN'] = rowCells[0].string.encode('utf-8')
@@ -119,7 +122,6 @@ class BrowserScraper():
         page2 = urllib2.urlopen(moreLink)
         #descriptionHTML = SoupStrainer(text="Description")
         soup2 = bs(page2) #, parseOnlyThese=descriptionHTML)
-        print soup2
 
         # # get description
         descStr = ''
@@ -140,7 +142,7 @@ class BrowserScraper():
 
     def getAllCourses(self):
         '''Scrapes all course information from the Wellesley College Course Browser and
-        returns a list of dictionaries corresponding to each course'''
+        returns a dictionary of dictionaries corresponding to each course'''
         dictOfCourses = {} # will hold all the class dictionaries
         tableContent = self.soup.find('tbody')
 
@@ -162,13 +164,14 @@ class BrowserScraper():
             self.saveDescriptionAndPrereqs(cells, indivClassDict)
 
             dictOfCourses[indivClassDict['CRN']] = indivClassDict #should go inside the first loop, but outside the second
-            print "Saving course with CRN: " + indivClassDict['CRN'] #since it takes a fair amount of time to scrape all the data, this helps know that the program is running
+            print "Saving course with CRN: " + indivClassDict['CRN'] #since it takes a fair amount of time to scrape all the data, this helps know that the program is running as expected
         return dictOfCourses
 
     # ------------------------------------------------------------------------------
     #                                WRITE INFO
     # ------------------------------------------------------------------------------
 
+    # TODO - the following 3 are repetitive. Do I want to wrap them all into one function?
     def writeCoursesFile(self, D):
         '''Given a dict of courses, writes a file with the dict'''
         filename = 'coursesFile.txt'
@@ -214,30 +217,6 @@ class BrowserScraper():
         deptFile.close()
 
     # ------------------------------------------------------------------------------
-    #                                READ INFO
-    # ------------------------------------------------------------------------------
-
-    def readCoursesFile(self):
-        '''Returns the basic python type (list of dicts) that corresponds to the string inside of the coursesFile'''
-        s = open('coursesFile.txt', 'r').read()
-        return ast.literal_eval(s)
-
-    def readDistFile(self):
-        '''Returns the basic python type (list) that corresponds to the string inside of the distibutions file'''
-        s = open('distributionFile.txt', 'r').read()
-        return ast.literal_eval(s)
-
-    def readSubjFile(self):
-        '''Returns the basic python type (list) that corresponds to the string inside of the subject file'''
-        s = open('subjectFile.txt', 'r').read()
-        return ast.literal_eval(s)
-
-    def readDeptFile(self):
-        '''Returns the basic python type (dict) that corresponds to the string inside of the deptartment file'''
-        s = open('departmentFile.txt', 'r').read()
-        return ast.literal_eval(s)
-
-    # ------------------------------------------------------------------------------
     #                   UPDATE INFO -- calls above functions
     # ------------------------------------------------------------------------------
 
@@ -257,10 +236,37 @@ class BrowserScraper():
 
     def updateAll(self):
         '''Scrapes and writes/rewrites all info including courses, department list, distribution
-        list, and subject list. Returns the list of courses.'''
-        listOfCourses = self.getAllCourses()
+        list, and subject list. Returns the dict of courses.'''
+        dictOfCourses = self.getAllCourses()
         self.writeCoursesFile(listOfCourses)
         self.writeDistFile(self.getDistributions())
         self.writeSubjFile(self.getSubjects())
         self.writeDeptFile()
-        return listOfCourses
+        return dictOfCourses
+
+
+# ------------------------------------------------------------------------------
+#                                READ INFO
+# ------------------------------------------------------------------------------
+
+class ScraperReader():
+
+    def readCoursesFile(self):
+        '''Returns the basic python type (dict of dicts) that corresponds to the string inside of the coursesFile'''
+        s = open('coursesFile.txt', 'r').read()
+        return ast.literal_eval(s)
+
+    def readDistFile(self):
+        '''Returns the basic python type (list) that corresponds to the string inside of the distibutions file'''
+        s = open('distributionFile.txt', 'r').read()
+        return ast.literal_eval(s)
+
+    def readSubjFile(self):
+        '''Returns the basic python type (list) that corresponds to the string inside of the subject file'''
+        s = open('subjectFile.txt', 'r').read()
+        return ast.literal_eval(s)
+
+    def readDeptFile(self):
+        '''Returns the basic python type (dict) that corresponds to the string inside of the deptartment file'''
+        s = open('departmentFile.txt', 'r').read()
+        return ast.literal_eval(s)

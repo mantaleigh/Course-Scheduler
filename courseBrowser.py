@@ -1,7 +1,7 @@
 # By Samantha Voigt
 
 from Tkinter import *
-import HTMLscraper as scraper
+import HTMLscraper as scrape
 from schedule import Schedule
 from scrolledFrame import ScrolledFrame
 from courseResultsBox import CourseResultsBox
@@ -12,27 +12,28 @@ class CourseBrowserApp(Tk):
         Tk.__init__(self)
         self.title('Course Browser')
         self.grid()
-        self.scrape = scraper.BrowserScraper()
+        self.reader = scrape.ScraperReader()
 
         try:
-            self.distributions = self.scrape.readDistFile()
-            self.subjects = self.scrape.readSubjFile()
-            self.departments = self.scrape.readDeptFile()
-            self.allCourses = self.scrape.readCoursesFile()
+            self.distributions = self.reader.readDistFile()
+            self.subjects = self.reader.readSubjFile()
+            self.departments = self.reader.readDeptFile()
+            self.allCourses = self.reader.readCoursesFile()
         except IOError:
-            self.scrape.updateAll()
-            self.distributions = self.scrape.readDistFile()
-            self.subjects = self.scrape.readSubjFile()
-            self.departments = self.scrape.readDeptFile()
-            self.allCourses = self.scrape.readCoursesFile()
+            self.scraper = scrape.BrowserScraper()
+            self.scraper.updateAll()
+            self.distributions = self.scraper.readDistFile()
+            self.subjects = self.scraper.readSubjFile()
+            self.departments = self.scraper.readDeptFile()
+            self.allCourses = self.scraper.readCoursesFile()
 
-        self.selectedCourses = self.allCourses # will be used to hold the courses that are currently in the mlb --> the ones that fit the criteria
+        self.selectedCourses = self.allCourses # will be used to hold the courses that are currently in the resultsBox --> the ones that fit the criteria
                                                # starts out being all courses
         self.createdOptions = []
         self.toSearchVars = {}
         self.scheduleInProgress = None
 
-#        self.pleaseSelectExists = False # please select label exists
+        self.pleaseSelectExists = False # please select label exists
         self.showCoursesButtonExists = False # show courses button exists
 
         self.createFrames()
@@ -47,17 +48,17 @@ class CourseBrowserApp(Tk):
         self.mainFrame.pack(fill=BOTH, expand=TRUE)
 
         self.topFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
-        self.topFrame.pack()
+        self.topFrame.pack(fill=X)
         self.topFrameLeft = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
-        self.topFrameLeft.pack(side=LEFT)
+        self.topFrameLeft.pack(side=LEFT, expand=YES)
         self.topFrameRight = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
-        self.topFrameRight.pack(side=RIGHT)
+        self.topFrameRight.pack(side=RIGHT, expand=YES)
         self.middleFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
-        self.middleFrame.pack()
+        self.middleFrame.pack(fill=X)
         self.bottomFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
-        self.bottomFrame.pack()
+        self.bottomFrame.pack(fill=X)
         self.buttonFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
-        self.buttonFrame.pack()
+        self.buttonFrame.pack(fill=X, expand=YES)
 
     def createWidgets(self):
 
@@ -93,24 +94,24 @@ class CourseBrowserApp(Tk):
         # Results ("Courses That Fit") section -------->
         coursesThatFitLabel = Label(self.bottomFrame, text="COURSES THAT FIT YOUR CRITERIA:", \
         font='Times 18 bold', fg='navy')
-        coursesThatFitLabel.grid(sticky=E+W, padx=2, row=0)
+        coursesThatFitLabel.pack(fill=X)
         coursesHelpText = Label(self.bottomFrame, \
             text="Hit Return/Enter on a course row to see the description, prerequisites, & additional instructors for that course", \
         font='Times 12 italic')
-        coursesHelpText.grid(sticky=E+W, row=1)
+        coursesHelpText.pack(fill=X)
 
-        self.mlb = CourseResultsBox(self.bottomFrame, self.scrape)
-        self.mlb.grid_(row=2, column=0, sticky=E+W)
+        self.resultsBox = CourseResultsBox(self.bottomFrame, self.allCourses)
+        self.resultsBox.pack_(fill=X)
 
         # Button section ---------->
-        updateButton = Button(self.buttonFrame, text='Update Courses', command=self.scrape.updateCourseInfo)
-        updateButton.grid(row=0, column=0)
-        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command = self.makeSchedule)
-        makeScheduleButton.grid(row=0, column=1)
+        updateButton = Button(self.buttonFrame, text='Update Courses', command=self.updateCourses)
+        updateButton.grid(row=0, column=0, sticky=E+W)
+        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command=self.makeSchedule)
+        makeScheduleButton.grid(row=0, column=1, sticky=E+W)
         delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
-        delScheduleButton.grid(row=0, column=2)
+        delScheduleButton.grid(row=0, column=2, sticky=E+W)
         notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", font='Times 12 italic')
-        notes.grid(row=1, columnspan=3)
+        notes.grid(row=1, columnspan=3, sticky=E+W)
 
     def checkSearchButtons(self):
         '''Check the state of the 'Search By' checkbuttons and returns a list w/the name of those that were clicked '''
@@ -134,40 +135,42 @@ class CourseBrowserApp(Tk):
         criteriaList = self.checkSearchButtons() # check to see what is selected
         showCoursesButton = Button(self.middleFrame, text="Show me courses!", command=None)
 
-#               The please select label needs to be fixex so that it shows up when nothing is selected,
+#               The please select label needs to be fixed so that it shows up when nothing is selected,
 #               and dissapears when something is.
 
- #       pleaseSelectLabel = Label(self.middleFrame, text="Please select some search criteria for options to be displayed", fg='red', font='Times 14 italic')
+        pleaseSelectLabel = Label(self.middleFrame, text="Please select some search criteria for options to be displayed", fg='red', font='Times 14 italic')
 
 
-##        if criteriaList == []:
-##            if(not self.pleaseSelectExists):
-##                pleaseSelectLabel.pack()
-##                self.pleaseSelectExists = True
-##        else:
-            #only pack the showCoursesButton when options are displaying and it hasn't been packed already
-            #destroy the pleaseSelectLabel if no criteria were selected
-##            if(self.pleaseSelectExists):
-##                pleaseSelectLabel.pack_forget()
-##                self.pleaseSelectExists = False
+        if criteriaList == []:
+            if(not self.pleaseSelectExists):
+                pleaseSelectLabel.pack(fill=X)
+                self.pleaseSelectExists = True
+        else:
+            if(self.pleaseSelectExists):
+                pleaseSelectLabel.pack_forget() # TODO: This isn't working... why?
+                self.pleaseSelectExists = False
 
                 #add in all the "new" options -- the ones that haven't been displayed yet
+        if(not self.showCoursesButtonExists and criteriaList != []):
+            showCoursesButton.pack(fill=X)
+            self.showCoursesButtonExists = True
         for option in criteriaList:
             if option not in self.createdOptions:
                 optionFrame = ScrollableOptionFrame(self.middleFrame, option, self.distributions, self.subjects, self.departments, self.toSearchVars)
-                optionFrame.pack(side=LEFT)
+                optionFrame.pack(side=LEFT, fill=X)
                 self.createdOptions.append(option)
-        if(not self.showCoursesButtonExists and self.createdOptions != []):
-            showCoursesButton.pack(fill=X)
-            self.showCoursesButtonExists = True
+
 
     def makeSchedule(self):
-        selectedItem = self.mlb.getScheduleInfo()
+        selectedItem = self.resultsBox.getScheduleInfo()
         try:
             self.scheduleInProgress.addCourse(selectedItem)
         except (TclError, AttributeError): # except when no schedule exists (either scheduleInProgress is None or it has been closed)
             self.scheduleInProgress = Schedule(selectedItem, self.selectedCourses)
 
 
-app = CourseBrowserApp()
-app.mainloop()
+    def updateCourses(self):
+        scraper = scrape.BrowserScraper()
+        updatedCourses = scraper.updateAll()
+        self.resultsBox.updateCourseInfo(updatedCourses)
+
