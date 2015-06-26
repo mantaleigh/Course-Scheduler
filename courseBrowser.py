@@ -11,7 +11,6 @@ class CourseBrowserApp(Tk):
     def __init__(self):
         Tk.__init__(self)
         self.title('Course Browser')
-        self.grid()
         self.reader = scrape.ScraperReader()
 
         try:
@@ -42,17 +41,15 @@ class CourseBrowserApp(Tk):
     def createFrames(self):
         '''Creates the frames (and a canvas) to organize all the information in the main app and create scrollbars'''
 
-        # smaller frames are packed into the main frame, smaller frames use grid
-
         self.mainFrame = ScrolledFrame(self)
         self.mainFrame.pack(fill=BOTH, expand=TRUE)
 
         self.topFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
         self.topFrame.pack(fill=X)
         self.topFrameLeft = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
-        self.topFrameLeft.pack(side=LEFT, expand=YES)
+        self.topFrameLeft.pack(side=LEFT, expand=YES, fill=X)
         self.topFrameRight = Frame(self.topFrame, takefocus=True, bd=2, relief=GROOVE)
-        self.topFrameRight.pack(side=RIGHT, expand=YES)
+        self.topFrameRight.pack(side=RIGHT, expand=YES, fill=X)
         self.middleFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
         self.middleFrame.pack(fill=X)
         self.bottomFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
@@ -64,29 +61,25 @@ class CourseBrowserApp(Tk):
 
         # 'Search By' section ------->
         searchByLabel = Label(self.topFrameLeft, text='SEARCH BY:', fg='navy',font='Times 16 bold')
-        searchByLabel.grid(row=0, column=0, sticky=W+E, padx=20)
+        searchByLabel.pack(side=LEFT, fill=X, expand=YES)
         searchByBoxes = ['Distribution', 'Subject', 'Department', 'Time/Days']
-        colAvail = 1
         self.searchVars = {}
         for box in searchByBoxes:
             var = IntVar()
             button = Checkbutton(self.topFrameLeft,text=box,variable=var)
-            button.grid(row=0, column=colAvail, sticky=W+E, padx=5)
+            button.pack(side=LEFT, fill=X, expand=YES)
             self.searchVars[box] = var
-            colAvail += 1
 
         # 'Show Only' section ------->
         showOnlyLabel = Label(self.topFrameRight, text='SHOW ONLY:', fg='navy', font='Times 16 bold')
-        showOnlyLabel.grid(row=0, column=0, sticky=W+E, padx=20)
-        colAvail = 1
+        showOnlyLabel.pack(side=LEFT, fill=X, expand=YES)
         self.showVars = {}
         showOnlyBoxes = ['If seats are available*','100 levels','200 levels','300 levels']
         for box in showOnlyBoxes:
             var = IntVar()
             button = Checkbutton(self.topFrameRight, text=box, variable=var)
-            button.grid(row=0, column=colAvail, sticky=W+E, padx=5)
+            button.pack(side=LEFT, fill=X, expand=YES)
             self.showVars[box] = var
-            colAvail += 1
 
         criteriaOptionsButton = Button(self.middleFrame, text="Give me options!", command=self.createCriteriaOptions)
         criteriaOptionsButton.pack(fill=X)
@@ -104,14 +97,15 @@ class CourseBrowserApp(Tk):
         self.resultsBox.pack_(fill=X)
 
         # Button section ---------->
-        updateButton = Button(self.buttonFrame, text='Update Courses', command=self.updateCourses)
-        updateButton.grid(row=0, column=0, sticky=E+W)
-        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command=self.makeSchedule)
-        makeScheduleButton.grid(row=0, column=1, sticky=E+W)
-        delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
-        delScheduleButton.grid(row=0, column=2, sticky=E+W)
         notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", font='Times 12 italic')
-        notes.grid(row=1, columnspan=3, sticky=E+W)
+        notes.pack()
+        updateButton = Button(self.buttonFrame, text='Update Courses', command=self.updateCourses)
+        updateButton.pack(side=LEFT, fill=X, expand=YES)
+        makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command=self.makeSchedule)
+        makeScheduleButton.pack(side=LEFT, fill=X, expand=YES)
+        delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
+        delScheduleButton.pack(side=LEFT, fill=X, expand=YES)
+
 
     def checkSearchButtons(self):
         '''Check the state of the 'Search By' checkbuttons and returns a list w/the name of those that were clicked '''
@@ -157,7 +151,7 @@ class CourseBrowserApp(Tk):
         for option in criteriaList:
             if option not in self.createdOptions:
                 optionFrame = ScrollableOptionFrame(self.middleFrame, option, self.distributions, self.subjects, self.departments, self.toSearchVars)
-                optionFrame.pack(side=LEFT, fill=X)
+                optionFrame.pack(side=LEFT, fill=X, expand=YES)
                 self.createdOptions.append(option)
 
 

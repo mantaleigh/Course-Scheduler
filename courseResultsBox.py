@@ -87,31 +87,31 @@ class ExtraInfoApp(Toplevel):
         Toplevel.__init__(self)
         self.title('Extra Information')
         self.createFrames(additionalInstructor)
-        self.createWidgets(description, prereqs, additionalInstructor)
+        self.createText(description, prereqs, additionalInstructor)
 
     def createFrames(self, additionalInstructor):
         '''Creates the frames to hold all the extra information.'''
-        self.descFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        self.descFrame.pack()
-        self.prereqFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
-        self.prereqFrame.pack()
+        self.descFrame = Frame(self, bd=2, relief=GROOVE)
+        self.descFrame.pack(fill=BOTH, expand=YES)
+        self.prereqFrame = Frame(self, bd=2, relief=GROOVE)
+        self.prereqFrame.pack(fill=BOTH, expand=YES)
         if additionalInstructor != None:
-            self.addtlInstFrame = Frame(self, bd=2, relief=GROOVE, takefocus=True)
+            self.addtlInstFrame = Frame(self, bd=2, relief=GROOVE)
             self.addtlInstFrame.pack()
 
     #can probably pretty this up (less repetition) with a dictionary or list
-    def createWidgets(self, description, prereqs, additionalInstructor):
+    def createText(self, description, prereqs, additionalInstructor):
         '''Creates the widgets for the extra information (description, prerequisites, or additional instructor)'''
         descriptionLabel = Label(self.descFrame,font='Times 18 bold', fg='navy', text="DESCRIPTION:")
-        descriptionLabel.pack()
+        descriptionLabel.pack(fill=BOTH, expand=YES)
         descriptionText = Message(self.descFrame, text=description)
-        descriptionText.pack()
+        descriptionText.pack(fill=BOTH, expand=YES)
         prereqLabel = Label(self.prereqFrame, font='Times 18 bold', fg='navy', text="PREREQUISITE(S):")
-        prereqLabel.pack()
+        prereqLabel.pack(fill=BOTH, expand=YES)
         prereqText = Message(self.prereqFrame, text=prereqs)
-        prereqText.pack()
+        prereqText.pack(fill=BOTH, expand=YES)
         if additionalInstructor != None:
             instructorLabel = Label(self.addtlInstFrame, font='Times 18 bold', fg='navy', text="ADDITIONAL INSTRUCTOR(S):")
-            instructorLabel.pack()
+            instructorLabel.pack(fill=BOTH, expand=YES)
             instructorText = Label(self.addtlInstFrame, text=additionalInstructor)
-            instructorText.pack()
+            instructorText.pack(fill=BOTH, expand=YES)
