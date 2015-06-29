@@ -15,6 +15,8 @@ class Schedule(Toplevel):
         self.currentColorIndex = 0
         self.canvas = Canvas(self, width=self.canvasWidth,height=self.canvasHeight)
         self.canvas.pack(expand=YES, fill=BOTH)
+        self.restartButton = Button(self, text="Restart Schedule", command = self.restart) #need to update command
+        self.restartButton.pack(expand=YES)
         self.selectedCourses = selectedCourses
         self.createBlankSchedule()
         self.addCourse(selectedItem)
@@ -68,31 +70,39 @@ class Schedule(Toplevel):
             endHour = int(endTime[:endTime.find(':')].strip())
             startMin = int(startTime[startTime.find(':')+1:startTime.find(':')+3].strip())
             endMin = int(endTime[endTime.find(':')+1:startTime.find(':')+3].strip())
-            print startMin
-            print endMin
 
             if 'am' in startTime: starti = startHour - 8 # 8am corresponds to i of 0
             else:
-                if startHour == 12: starti = 4
-                else: starti = startHour + 4 # 1pm corresponds to i of 6
+                if startHour == 12: starti = 4 # noon is an i of 4
+                else: starti = startHour + 4 
 
+            # same thing as above except for the end time
             if 'am' in endTime: endi = endHour - 8
             else:
                 if endHour == 12: endi = 4
                 else: endi = endHour + 4
 
-            try:
-                print "startMin " + str(startMin)
-                startMinI = float(startMin)/60.0 + 1.0
-            except ZeroDivisionError: startMinI = 1 # 1 means that the time is on the hour
-
-            try:
-                print "endMin " + str(endMin)
-                endMinI = float(endMin)/60.0  + 1.0
-            except ZeroDivisionError: endMinI = 1 # 1 means that the time is on the hour
-
             dayi = dayToiValDict[day]
-            self.canvas.create_polygon(self.hDistApart*dayi, ((self.vDistApart*(starti)+25)*startMinI), self.hDistApart*(dayi+1), ((self.vDistApart*(starti)+25)*startMinI), self.hDistApart*(dayi+1), ((self.vDistApart*(endi)+25)*endMinI), self.hDistApart*dayi, ((self.vDistApart*(endi)+25)*endMinI), fill=color)
-            self.canvas.create_text(self.hDistApart*dayi+5, (self.vDistApart*starti)+35, anchor=NW, text="CRN: " + CRN)
 
-        print times # testing
+            if startMin != 0: 
+                startMinDisplacement = float(startMin)/60.0
+            else: 
+                startMinDisplacement = 0
+
+            if endMin != 0: 
+                endMinDisplacement = float(endMin)/60.0
+            else: 
+                endMinDisplacement = 0
+
+            # point 1 is the top left corner, then the points proceed clockwise
+            polygonPt2_X = polygonPt3_X = self.hDistApart*dayi
+            polygonPt1_X = polygonPt4_X = self.hDistApart*(dayi+1)
+            polygonPt1_Y = polygonPt2_Y = (starti+startMinDisplacement)*self.vDistApart+25
+            polygonPt3_Y = polygonPt4_Y = (endi+endMinDisplacement)*self.vDistApart+25
+
+            self.canvas.create_polygon(polygonPt1_X, polygonPt1_Y, polygonPt2_X, polygonPt2_Y, polygonPt3_X, polygonPt3_Y, polygonPt4_X, polygonPt4_Y, fill=color, tags="courses")
+            self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+5, anchor=NW, text="CRN: " + CRN, tags="courses")
+
+    def restart(self): 
+        self.canvas.delete("courses")
+

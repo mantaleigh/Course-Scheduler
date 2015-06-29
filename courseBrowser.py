@@ -53,7 +53,7 @@ class CourseBrowserApp(Tk):
         self.middleFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
         self.middleFrame.pack(fill=X)
         self.bottomFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
-        self.bottomFrame.pack(fill=X)
+        self.bottomFrame.pack(fill=BOTH, expand=YES)
         self.buttonFrame = Frame(self.mainFrame.interior, bd=2, relief=GROOVE, takefocus=True)
         self.buttonFrame.pack(fill=X, expand=YES)
 
@@ -94,7 +94,7 @@ class CourseBrowserApp(Tk):
         coursesHelpText.pack(fill=X)
 
         self.resultsBox = CourseResultsBox(self.bottomFrame, self.allCourses)
-        self.resultsBox.pack_(fill=X)
+        self.resultsBox.pack_(fill=X, expand=YES)
 
         # Button section ---------->
         notes = Label(self.buttonFrame, text="Note that some fields may not reflect recent changes, and that updating the courses may take a few minutes.", font='Times 12 italic')
@@ -103,8 +103,7 @@ class CourseBrowserApp(Tk):
         updateButton.pack(side=LEFT, fill=X, expand=YES)
         makeScheduleButton = Button(self.buttonFrame, text="Add Course To Schedule", command=self.makeSchedule)
         makeScheduleButton.pack(side=LEFT, fill=X, expand=YES)
-        delScheduleButton = Button(self.buttonFrame, text="Restart Schedule", command = None) #need to update command
-        delScheduleButton.pack(side=LEFT, fill=X, expand=YES)
+
 
 
     def checkSearchButtons(self):
