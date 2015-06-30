@@ -2,6 +2,7 @@
 # Schedule TopLevel window for the courseBrowser
 
 from Tkinter import *
+import os
 
 class Schedule(Toplevel):
     def __init__(self, selectedItem, selectedCourses):
@@ -11,15 +12,27 @@ class Schedule(Toplevel):
         self.canvasHeight = 525
         self.vDistApart = self.canvasHeight/15
         self.hDistApart = self.canvasWidth/6
-        self.colors = ['orange', 'green', 'purple', 'yellow', 'blue', 'turquoise']
+        self.colors = ['orange', 'green', 'purple', 'yellow', 'cyan', 'turquoise']
         self.currentColorIndex = 0
+
+        # make canvas
         self.canvas = Canvas(self, width=self.canvasWidth,height=self.canvasHeight)
         self.canvas.pack(expand=YES, fill=BOTH)
-        self.restartButton = Button(self, text="Restart Schedule", command = self.restart) #need to update command
-        self.restartButton.pack(expand=YES)
-        self.selectedCourses = selectedCourses
+
+        self.selectedCourses = selectedCourses # to use later
+        self.scheduledCourses = []
+
         self.createBlankSchedule()
+        self.createWidgets()
         self.addCourse(selectedItem)
+
+    def createWidgets(self): 
+        self.helpLabel = Label(self, text="Note that saving the CRNs to desktop currently only works on Mac (will fix)", fg='blue', font='Times 14 italic')
+        self.helpLabel.pack(expand=YES)
+        restartButton = Button(self, text="Restart Schedule", command=self.restart)
+        restartButton.pack(side=LEFT, expand=YES)
+        saveButton = Button(self, text="Save CRNs", command=self.saveCRNs)
+        saveButton.pack(side=LEFT, expand=YES)
 
     def createBlankSchedule(self):
         self.canvas.create_line(0,25, self.canvasWidth, 25)
@@ -44,9 +57,10 @@ class Schedule(Toplevel):
                 self.canvas.create_text(self.hDistApart*i-(self.hDistApart/2), 15, text=days[i-2], fill='red')
 
     def addCourse(self, selectedItem):
+        self.scheduledCourses.append(selectedItem)
         CRN = selectedItem['CRN']
-        title = selectedItem['Title']
-        course = selectedItem['Course']
+        # title = selectedItem['Title'] # might use these in the future
+        # course = selectedItem['Course']
         color = self.colors[self.currentColorIndex] # color for the selected course
         if self.currentColorIndex < (len(self.colors)-1): # increment for the next course to have a different color
             self.currentColorIndex+=1
@@ -56,7 +70,6 @@ class Schedule(Toplevel):
         # currently looping through all selected courses because I don't have an easily usable 
         # version of day and times stored in the table. --- need to improve 
         for item in self.selectedCourses.values():
-           # print item #testing
             if item['CRN'] == CRN:
                 times = item['Day/Time'] # is a dictionary
 
@@ -82,17 +95,15 @@ class Schedule(Toplevel):
                 if endHour == 12: endi = 4
                 else: endi = endHour + 4
 
-            dayi = dayToiValDict[day]
-
             if startMin != 0: 
                 startMinDisplacement = float(startMin)/60.0
-            else: 
-                startMinDisplacement = 0
+            else: startMinDisplacement = 0
 
             if endMin != 0: 
                 endMinDisplacement = float(endMin)/60.0
-            else: 
-                endMinDisplacement = 0
+            else: endMinDisplacement = 0
+
+            dayi = dayToiValDict[day]
 
             # point 1 is the top left corner, then the points proceed clockwise
             polygonPt2_X = polygonPt3_X = self.hDistApart*dayi
@@ -101,8 +112,50 @@ class Schedule(Toplevel):
             polygonPt3_Y = polygonPt4_Y = (endi+endMinDisplacement)*self.vDistApart+25
 
             self.canvas.create_polygon(polygonPt1_X, polygonPt1_Y, polygonPt2_X, polygonPt2_Y, polygonPt3_X, polygonPt3_Y, polygonPt4_X, polygonPt4_Y, fill=color, tags="courses")
-            self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+5, anchor=NW, text="CRN: " + CRN, tags="courses")
+            self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+5, anchor=NW, text="CRN: " + CRN, tags="courses") # +5 is just for offset from top and left
 
     def restart(self): 
         self.canvas.delete("courses")
+        self.scheduledCourses = [] # clear out all the stored courses
+
+    # TODO: put all of this in the command, not another function
+    def saveCRNs(self): 
+        FileNamePrompt(self.scheduledCourses)
+
+class FileNamePrompt(Toplevel): 
+    def __init__(self, scheduledCourses): 
+        Toplevel.__init__(self)
+        self.title('Save CRNs')
+        self.scheduledCourses = scheduledCourses
+        self.helpText = Label(self, text="Please enter a name for the CRN file:", fg='blue', font='Times 14 italic')
+        self.helpText.pack(expand=YES, fill=BOTH)
+        self.fileNameField = Entry(self)
+        self.fileNameField.insert(0, "CRN_file_name")
+        self.fileNameField.pack(expand=YES)
+        self.saveButton = Button(self, text="Save to Desktop", command=self.save)
+        self.saveButton.pack()
+
+    def save(self): 
+        filename = self.fileNameField.get() + ".txt"
+        completeName = os.path.join(os.path.expanduser('~'), 'Desktop', filename)
+        try:
+            crnFile = open(completeName, "w")
+            for course in self.scheduledCourses:
+                crnFile.write(course['Title'] + ': ' + course['CRN'] + '\n')
+            crnFile.close()
+            StatusPrompt("Success", "Your file was successfully saved to your desktop.")
+            self.destroy()
+        except IOError: 
+            StatusPrompt("Error", "There was a problem saving your file.")
+            self.destroy()
+
+# generic status prompt
+class StatusPrompt(Toplevel): 
+    def __init__(self, titleText, statusText): 
+        Toplevel.__init__(self)
+        self.title(titleText)
+        self.text = Label(self, text=statusText, font='Times 14')
+        self.text.pack(expand=YES, fill=BOTH)
+        self.okButton = Button(self, text="Ok", command=self.destroy)
+        self.okButton.pack(expand=YES)
 
