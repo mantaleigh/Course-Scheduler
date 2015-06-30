@@ -1,5 +1,6 @@
 # Samantha Voigt
 # Schedule TopLevel window for the courseBrowser
+# also additional Toplevel windows that "come off" the Schedule
 
 from Tkinter import *
 import os
@@ -57,62 +58,63 @@ class Schedule(Toplevel):
                 self.canvas.create_text(self.hDistApart*i-(self.hDistApart/2), 15, text=days[i-2], fill='red')
 
     def addCourse(self, selectedItem):
-        self.scheduledCourses.append(selectedItem)
-        CRN = selectedItem['CRN']
-        # title = selectedItem['Title'] # might use these in the future
-        # course = selectedItem['Course']
-        color = self.colors[self.currentColorIndex] # color for the selected course
-        if self.currentColorIndex < (len(self.colors)-1): # increment for the next course to have a different color
-            self.currentColorIndex+=1
-        else: self.currentColorIndex = 0
+        if selectedItem not in self.scheduledCourses: # if it hasn't already been added
+            self.scheduledCourses.append(selectedItem)
+            CRN = selectedItem['CRN']
+            course = selectedItem['Course']
+            color = self.colors[self.currentColorIndex] # color for the selected course
+            if self.currentColorIndex < (len(self.colors)-1): # increment for the next course to have a different color
+                self.currentColorIndex+=1
+            else: self.currentColorIndex = 0
 
-        # TODO
-        # currently looping through all selected courses because I don't have an easily usable 
-        # version of day and times stored in the table. --- need to improve 
-        for item in self.selectedCourses.values():
-            if item['CRN'] == CRN:
-                times = item['Day/Time'] # is a dictionary
+            # TODO
+            # currently looping through all selected courses because I don't have an easily usable 
+            # version of day and times stored in the table. --- need to improve 
+            for item in self.selectedCourses.values():
+                if item['CRN'] == CRN:
+                    times = item['Day/Time'] # is a dictionary
 
-        dayToiValDict = {'M': 1, 'T': 2, 'W': 3, 'Th': 4, 'F': 5} # matches a day abbr. w/ the i value from createBlankSchedule used to make the corresponding leftmost line
-        for day in times: # days are the keys of the dictionary
-            # get upmost distance and bottom most distance that corresponds to the time
-            time = times[day]
-            startTime = time[:time.find('-')].strip()
-            endTime = time[time.find('-')+2:].strip()
-            startHour = int(startTime[:startTime.find(':')].strip())
-            endHour = int(endTime[:endTime.find(':')].strip())
-            startMin = int(startTime[startTime.find(':')+1:startTime.find(':')+3].strip())
-            endMin = int(endTime[endTime.find(':')+1:startTime.find(':')+3].strip())
+            dayToiValDict = {'M': 1, 'T': 2, 'W': 3, 'Th': 4, 'F': 5} # matches a day abbr. w/ the i value from createBlankSchedule used to make the corresponding leftmost line
+            for day in times: # days are the keys of the dictionary
+                # get upmost distance and bottom most distance that corresponds to the time
+                time = times[day]
+                startTime = time[:time.find('-')].strip()
+                endTime = time[time.find('-')+2:].strip()
+                startHour = int(startTime[:startTime.find(':')].strip())
+                endHour = int(endTime[:endTime.find(':')].strip())
+                startMin = int(startTime[startTime.find(':')+1:startTime.find(':')+3].strip())
+                endMin = int(endTime[endTime.find(':')+1:startTime.find(':')+3].strip())
 
-            if 'am' in startTime: starti = startHour - 8 # 8am corresponds to i of 0
-            else:
-                if startHour == 12: starti = 4 # noon is an i of 4
-                else: starti = startHour + 4 
+                if 'am' in startTime: starti = startHour - 8 # 8am corresponds to i of 0
+                else:
+                    if startHour == 12: starti = 4 # noon is an i of 4
+                    else: starti = startHour + 4 
 
-            # same thing as above except for the end time
-            if 'am' in endTime: endi = endHour - 8
-            else:
-                if endHour == 12: endi = 4
-                else: endi = endHour + 4
+                # same thing as above except for the end time
+                if 'am' in endTime: endi = endHour - 8
+                else:
+                    if endHour == 12: endi = 4
+                    else: endi = endHour + 4
 
-            if startMin != 0: 
-                startMinDisplacement = float(startMin)/60.0
-            else: startMinDisplacement = 0
+                if startMin != 0: 
+                    startMinDisplacement = float(startMin)/60.0
+                else: startMinDisplacement = 0
 
-            if endMin != 0: 
-                endMinDisplacement = float(endMin)/60.0
-            else: endMinDisplacement = 0
+                if endMin != 0: 
+                    endMinDisplacement = float(endMin)/60.0
+                else: endMinDisplacement = 0
 
-            dayi = dayToiValDict[day]
+                dayi = dayToiValDict[day]
 
-            # point 1 is the top left corner, then the points proceed clockwise
-            polygonPt2_X = polygonPt3_X = self.hDistApart*dayi
-            polygonPt1_X = polygonPt4_X = self.hDistApart*(dayi+1)
-            polygonPt1_Y = polygonPt2_Y = (starti+startMinDisplacement)*self.vDistApart+25
-            polygonPt3_Y = polygonPt4_Y = (endi+endMinDisplacement)*self.vDistApart+25
+                # point 1 is the top left corner, then the points proceed clockwise
+                polygonPt2_X = polygonPt3_X = self.hDistApart*dayi
+                polygonPt1_X = polygonPt4_X = self.hDistApart*(dayi+1)
+                polygonPt1_Y = polygonPt2_Y = (starti+startMinDisplacement)*self.vDistApart+25
+                polygonPt3_Y = polygonPt4_Y = (endi+endMinDisplacement)*self.vDistApart+25
 
-            self.canvas.create_polygon(polygonPt1_X, polygonPt1_Y, polygonPt2_X, polygonPt2_Y, polygonPt3_X, polygonPt3_Y, polygonPt4_X, polygonPt4_Y, fill=color, tags="courses")
-            self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+5, anchor=NW, text="CRN: " + CRN, tags="courses") # +5 is just for offset from top and left
+                self.canvas.create_polygon(polygonPt1_X, polygonPt1_Y, polygonPt2_X, polygonPt2_Y, polygonPt3_X, polygonPt3_Y, polygonPt4_X, polygonPt4_Y, fill=color, tags="courses")
+                self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+20, anchor=NW, text="CRN: " + CRN, tags="courses") # +5 is just for offset from top and left
+                self.canvas.create_text(polygonPt2_X+5, polygonPt1_Y+5, anchor=NW, text=course[:course.index('-')-1], tags="courses") # +5 is just for offset from top and left
 
     def restart(self): 
         self.canvas.delete("courses")
@@ -134,6 +136,8 @@ class FileNamePrompt(Toplevel):
         self.fileNameField.pack(expand=YES)
         self.saveButton = Button(self, text="Save to Desktop", command=self.save)
         self.saveButton.pack()
+        self.cancelButton = Button(self, text="Cancel", command=self.destroy)
+        self.cancelButton.pack()
 
     def save(self): 
         filename = self.fileNameField.get() + ".txt"
@@ -141,12 +145,13 @@ class FileNamePrompt(Toplevel):
         try:
             crnFile = open(completeName, "w")
             for course in self.scheduledCourses:
-                crnFile.write(course['Title'] + ': ' + course['CRN'] + '\n')
+                crnFile.write(course['CRN'] + ': ' + course['Title'] + '\n')
             crnFile.close()
             StatusPrompt("Success", "Your file was successfully saved to your desktop.")
             self.destroy()
         except IOError: 
             StatusPrompt("Error", "There was a problem saving your file.")
+            print IOError
             self.destroy()
 
 # generic status prompt
